@@ -1,13 +1,19 @@
 import {
   analysisSchema,
   apiErrorSchema,
+  comparisonResultSchema,
   findingsResponseSchema,
   listAnalysesResponseSchema,
+  reviewStateSchema,
+  reviewsResponseSchema,
   type Analysis,
+  type ComparisonResult,
   type CreateAnalysisRequest,
   type Finding,
   type FindingsQuery,
   type ListAnalysesResponse,
+  type ReviewState,
+  type UpdateReviewRequest,
 } from "@pink-bridge/shared";
 
 export class ApiRequestError extends Error {
@@ -113,4 +119,39 @@ export async function getFindings(id: string, query: FindingsQuery = {}): Promis
     throw invalidResponse();
   }
   return parsed.data.items;
+}
+
+export async function getReviews(analysisId: string): Promise<ReviewState[]> {
+  const response = await send(`/api/analyses/${encodeURIComponent(analysisId)}/reviews`);
+  const parsed = reviewsResponseSchema.safeParse(response.body);
+  if (!parsed.success) {
+    throw invalidResponse();
+  }
+  return parsed.data.items;
+}
+
+export async function saveReview(
+  findingId: string,
+  request: UpdateReviewRequest,
+): Promise<ReviewState> {
+  const response = await send(`/api/findings/${encodeURIComponent(findingId)}/review`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  const parsed = reviewStateSchema.safeParse(response.body);
+  if (!parsed.success) {
+    throw invalidResponse();
+  }
+  return parsed.data;
+}
+
+export async function compareAnalyses(fromId: string, toId: string): Promise<ComparisonResult> {
+  const params = new URLSearchParams({ from: fromId, to: toId });
+  const response = await send(`/api/analyses/compare?${params.toString()}`);
+  const parsed = comparisonResultSchema.safeParse(response.body);
+  if (!parsed.success) {
+    throw invalidResponse();
+  }
+  return parsed.data;
 }

@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import type { AnalysisStatus, Finding } from "@pink-bridge/shared";
+import type { AnalysisStatus, Finding, ReviewState } from "@pink-bridge/shared";
 import {
   AnalysisStoreError,
   type AnalysisPatch,
@@ -68,6 +68,18 @@ const MIGRATIONS: readonly Migration[] = [
 
       CREATE TRIGGER analyses_no_delete BEFORE DELETE ON analyses
       BEGIN SELECT RAISE(ABORT, 'analyses_immutable'); END;
+    `,
+  },
+  {
+    version: 2,
+    name: "estados_de_revision",
+    sql: `
+      CREATE TABLE review_states (
+        finding_id TEXT PRIMARY KEY REFERENCES findings (id),
+        status TEXT NOT NULL CHECK (status IN ('pending', 'reviewed', 'accepted', 'fixed')),
+        note TEXT,
+        updated_at TEXT NOT NULL
+      );
     `,
   },
 ];
@@ -166,6 +178,22 @@ const PATCH_COLUMNS: Readonly<Record<keyof AnalysisPatch, string>> = {
   errorCode: "error_code",
   errorMessage: "error_message",
 };
+
+interface ReviewRow {
+  finding_id: string;
+  status: ReviewState["status"];
+  note: string | null;
+  updated_at: string;
+}
+
+function toReview(row: ReviewRow): ReviewState {
+  return {
+    findingId: row.finding_id,
+    status: row.status,
+    note: row.note,
+    updatedAt: row.updated_at,
+  };
+}
 
 /** Almacén SQLite. Cumple el mismo contrato que InMemoryAnalysisStore. */
 export class SqliteAnalysisStore implements AnalysisStore {
@@ -321,6 +349,38 @@ export class SqliteAnalysisStore implements AnalysisStore {
   getFinding(findingId: string): Promise<Finding | undefined> {
     const row = this.getFindingStmt.get(findingId) as { payload_json: string } | undefined;
     return Promise.resolve(row ? (JSON.parse(row.payload_json) as Finding) : undefined);
+  }
+
+  upsertReview(review: ReviewState): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO review_states (finding_id, status, note, updated_at) VALUES (@findingId, @status, @note, @updatedAt)
+         ON CONFLICT (finding_id) DO UPDATE SET status = excluded.status, note = excluded.note, updated_at = excluded.updated_at`,
+      )
+      .run({
+        findingId: review.findingId,
+        status: review.status,
+        note: review.note,
+        updatedAt: review.updatedAt,
+      });
+    return Promise.resolve();
+  }
+
+  getReview(findingId: string): Promise<ReviewState | undefined> {
+    const row = this.db
+      .prepare("SELECT * FROM review_states WHERE finding_id = ?")
+      .get(findingId) as ReviewRow | undefined;
+    return Promise.resolve(row ? toReview(row) : undefined);
+  }
+
+  listReviews(analysisId: string): Promise<ReviewState[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT r.* FROM review_states r JOIN findings f ON f.id = r.finding_id
+         WHERE f.analysis_id = ? ORDER BY f.position`,
+      )
+      .all(analysisId) as ReviewRow[];
+    return Promise.resolve(rows.map(toReview));
   }
 
   close(): void {

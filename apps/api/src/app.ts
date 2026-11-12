@@ -3,6 +3,9 @@ import { API_VERSION, createApiError } from "@pink-bridge/shared";
 import { AnalysisService } from "./analysis/service.js";
 import { InMemoryAnalysisStore, type AnalysisStore } from "./analysis/store.js";
 import { registerAnalysisRoutes } from "./routes/analyses.js";
+import { registerReviewRoutes } from "./routes/reviews.js";
+import { registerReportRoutes } from "./routes/reports.js";
+import { registerCompareRoutes } from "./routes/compare.js";
 import type { AnalysisServiceOptions } from "./analysis/service.js";
 
 export interface BuildAppOptions {
@@ -53,6 +56,9 @@ export function createPinkBridge(options: BuildAppOptions = {}): PinkBridgeApp {
   }));
 
   registerAnalysisRoutes(app, service);
+  registerReviewRoutes(app, service);
+  registerReportRoutes(app, service);
+  registerCompareRoutes(app, service);
 
   app.setNotFoundHandler((_request, reply) => {
     reply.code(404).send(createApiError("not_found", "Recurso no encontrado."));

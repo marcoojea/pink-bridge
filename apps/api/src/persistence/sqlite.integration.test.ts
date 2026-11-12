@@ -234,7 +234,7 @@ describe("migraciones", () => {
     try {
       expect(migrate(db)).toEqual([]);
       const rows = db.prepare("SELECT version FROM schema_migrations").all();
-      expect(rows).toHaveLength(1);
+      expect(rows).toHaveLength(2);
     } finally {
       db.close();
     }

@@ -204,6 +204,9 @@ describe("Análisis", () => {
       affectedNodeCount: 0,
     });
     stubFetch((url) => {
+      if (url.endsWith("/reviews")) {
+        return { status: 200, body: { items: [] } };
+      }
       if (url.endsWith("/findings")) {
         return { status: 200, body: { items: [makeFinding(), reviewFinding], total: 2 } };
       }

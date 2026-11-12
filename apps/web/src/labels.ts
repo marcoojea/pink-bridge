@@ -1,4 +1,10 @@
-import type { AnalysisStage, AnalysisStatus, FindingKind, Impact } from "@pink-bridge/shared";
+import type {
+  AnalysisStage,
+  AnalysisStatus,
+  FindingKind,
+  Impact,
+  ReviewStatus,
+} from "@pink-bridge/shared";
 
 export const IMPACT_LABELS: Readonly<Record<Impact, string>> = {
   critical: "Crítico",
@@ -39,6 +45,13 @@ export const STAGE_ORDER: readonly AnalysisStage[] = [
 export const KIND_LABELS: Readonly<Record<FindingKind, string>> = {
   automatic: "Incidencia automática",
   needs_review: "Revisión manual",
+};
+
+export const REVIEW_LABELS: Readonly<Record<ReviewStatus, string>> = {
+  pending: "Pendiente",
+  reviewed: "Revisada",
+  accepted: "Aceptada",
+  fixed: "Corregida (sin verificar)",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-ES", {

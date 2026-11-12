@@ -119,6 +119,22 @@ export function AnalysisView({ id }: { readonly id: string }) {
           están aprobadas: requieren una revisión humana. Esta herramienta no certifica la
           conformidad WCAG.
         </p>
+        <nav aria-label="Descargar informe" className="secondary-actions">
+          <a
+            className="button-link secondary-link"
+            href={`/api/analyses/${analysis.id}/report?format=json`}
+            download
+          >
+            Descargar informe JSON
+          </a>
+          <a
+            className="button-link secondary-link"
+            href={`/api/analyses/${analysis.id}/report?format=html`}
+            download
+          >
+            Descargar informe HTML
+          </a>
+        </nav>
       </div>
       {analysis.summary !== null && <SummaryCards summary={analysis.summary} />}
       <FindingsPanel analysisId={analysis.id} />

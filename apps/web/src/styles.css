@@ -508,3 +508,37 @@ button:disabled {
     width: auto;
   }
 }
+
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.4rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.secondary-link {
+  background: transparent;
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+}
+
+.comparison-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.comparison-summary > div {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.comparison-summary dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}

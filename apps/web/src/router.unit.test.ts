@@ -22,6 +22,17 @@ describe("parseRoute", () => {
     expect(parseRoute("#/desconocida")).toEqual({ name: "notFound" });
   });
 
+  it("resuelve la comparación solo con dos identificadores UUID", () => {
+    const other = "11111111-1111-4111-8111-111111111111";
+    expect(parseRoute(`#/comparar/${ID}/${other}`)).toEqual({
+      name: "compare",
+      from: ID,
+      to: other,
+    });
+    expect(parseRoute(`#/comparar/${ID}`)).toEqual({ name: "notFound" });
+    expect(parseRoute(`#/comparar/${ID}/no-uuid`)).toEqual({ name: "notFound" });
+  });
+
   it("genera los enlaces que el parser reconoce", () => {
     expect(parseRoute(routeHref("history"))).toEqual({ name: "history" });
     expect(parseRoute(analysisHref(ID))).toEqual({ name: "analysis", id: ID });

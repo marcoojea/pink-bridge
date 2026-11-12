@@ -4,6 +4,7 @@ import type {
   AnalysisStatus,
   AnalysisSummary,
   Finding,
+  ReviewState,
 } from "@pink-bridge/shared";
 
 export interface AnalysisRecord {
@@ -63,6 +64,10 @@ export interface AnalysisStore {
   insertFindings(analysisId: string, findings: readonly Finding[]): Promise<void>;
   listFindings(analysisId: string, filter: FindingFilter): Promise<Finding[]>;
   getFinding(findingId: string): Promise<Finding | undefined>;
+  /** Crea o reemplaza el estado de revisión. Nunca modifica las incidencias de la auditoría. */
+  upsertReview(review: ReviewState): Promise<void>;
+  getReview(findingId: string): Promise<ReviewState | undefined>;
+  listReviews(analysisId: string): Promise<ReviewState[]>;
 }
 
 export class AnalysisStoreError extends Error {
@@ -89,6 +94,7 @@ function matches(finding: Finding, filter: FindingFilter): boolean {
 export class InMemoryAnalysisStore implements AnalysisStore {
   private readonly analyses = new Map<string, AnalysisRecord>();
   private readonly findingsByAnalysis = new Map<string, Finding[]>();
+  private readonly reviews = new Map<string, ReviewState>();
 
   insertAnalysis(record: AnalysisRecord): Promise<void> {
     if (this.analyses.has(record.id)) {
@@ -151,6 +157,27 @@ export class InMemoryAnalysisStore implements AnalysisStore {
       findings
         .filter((finding) => matches(finding, filter))
         .map((finding) => structuredClone(finding)),
+    );
+  }
+
+  upsertReview(review: ReviewState): Promise<void> {
+    this.reviews.set(review.findingId, structuredClone(review));
+    return Promise.resolve();
+  }
+
+  getReview(findingId: string): Promise<ReviewState | undefined> {
+    const review = this.reviews.get(findingId);
+    return Promise.resolve(review ? structuredClone(review) : undefined);
+  }
+
+  listReviews(analysisId: string): Promise<ReviewState[]> {
+    const ids = new Set(
+      (this.findingsByAnalysis.get(analysisId) ?? []).map((finding) => finding.id),
+    );
+    return Promise.resolve(
+      [...this.reviews.values()]
+        .filter((review) => ids.has(review.findingId))
+        .map((review) => structuredClone(review)),
     );
   }
 

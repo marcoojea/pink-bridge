@@ -6,7 +6,11 @@ import type {
   CreateAnalysisRequest,
   Finding,
   FindingsQuery,
+  ComparisonResult,
+  ReviewState,
+  UpdateReviewRequest,
 } from "@pink-bridge/shared";
+import { compareAnalyses } from "./compare.js";
 import { normalizeAxeResults } from "../analyzer/normalize.js";
 import {
   AnalysisRunError,
@@ -174,6 +178,87 @@ export class AnalysisService {
       ...(query.ruleId !== undefined ? { ruleId: query.ruleId } : {}),
     };
     return this.store.listFindings(analysisId, filter);
+  }
+
+  /**
+   * Guarda la revisión humana de una incidencia. El estado es independiente de la auditoría:
+   * marcar "corregida" no equivale a verificar que el problema ha desaparecido.
+   */
+  async setReview(
+    findingId: string,
+    request: UpdateReviewRequest,
+  ): Promise<ReviewState | undefined> {
+    const finding = await this.store.getFinding(findingId);
+    if (!finding) {
+      return undefined;
+    }
+    const review: ReviewState = {
+      findingId,
+      status: request.status,
+      note: request.note ?? null,
+      updatedAt: this.now().toISOString(),
+    };
+    await this.store.upsertReview(review);
+    return review;
+  }
+
+  /** Datos para el informe. Un análisis fallido no tiene informe: nunca se presenta como "sin incidencias". */
+  async reportData(
+    analysisId: string,
+  ): Promise<{ analysis: Analysis; findings: Finding[]; reviews: ReviewState[] } | undefined> {
+    const record = await this.store.getAnalysis(analysisId);
+    if (!record) {
+      return undefined;
+    }
+    if (record.status !== "completed") {
+      throw new ServiceError(
+        409,
+        "report_unavailable",
+        "El informe solo está disponible para análisis completados.",
+      );
+    }
+    const findings = await this.store.listFindings(analysisId, {});
+    const reviews = await this.store.listReviews(analysisId);
+    return { analysis: toPublicAnalysis(record), findings, reviews };
+  }
+
+  /** Compara dos auditorías completadas de la misma URL normalizada. */
+  async compare(fromId: string, toId: string): Promise<ComparisonResult | undefined> {
+    const from = await this.store.getAnalysis(fromId);
+    const to = await this.store.getAnalysis(toId);
+    if (!from || !to) {
+      return undefined;
+    }
+    if (from.status !== "completed" || to.status !== "completed") {
+      throw new ServiceError(
+        409,
+        "analysis_not_completed",
+        "Solo se pueden comparar análisis completados.",
+      );
+    }
+    if (from.normalizedUrl !== to.normalizedUrl) {
+      throw new ServiceError(
+        409,
+        "incompatible_analyses",
+        "Solo se pueden comparar análisis de la misma URL.",
+      );
+    }
+    const baselineFindings = await this.store.listFindings(fromId, {});
+    const targetFindings = await this.store.listFindings(toId, {});
+    return compareAnalyses(
+      toPublicAnalysis(from),
+      toPublicAnalysis(to),
+      baselineFindings,
+      targetFindings,
+    );
+  }
+
+  async reviews(analysisId: string): Promise<ReviewState[] | undefined> {
+    const analysis = await this.store.getAnalysis(analysisId);
+    if (!analysis) {
+      return undefined;
+    }
+    return this.store.listReviews(analysisId);
   }
 
   /** Marca como fallidos los análisis que quedaron en cola o en curso tras un reinicio. */

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { analysisSchema, findingSchema, impactSchema, type Impact } from "./analysis.js";
+import { analysisSchema, findingSchema, impactSchema } from "./analysis.js";
 
 export const MAX_URL_LENGTH = 2048;
 
@@ -62,4 +62,66 @@ export const updateReviewRequestSchema = z
   .strict();
 export type UpdateReviewRequest = z.infer<typeof updateReviewRequestSchema>;
 
-export type ImpactFilter = Impact;
+/** Estado de revisión: separado de los resultados de la auditoría, que son inmutables. */
+export const reviewStateSchema = z
+  .object({
+    findingId: z.string().min(1),
+    status: reviewStatusSchema,
+    note: z.string().nullable(),
+    updatedAt: z.iso.datetime(),
+  })
+  .strict();
+export type ReviewState = z.infer<typeof reviewStateSchema>;
+
+export const reviewsResponseSchema = z
+  .object({
+    items: z.array(reviewStateSchema),
+  })
+  .strict();
+export type ReviewsResponse = z.infer<typeof reviewsResponseSchema>;
+
+/** Hallazgos de la comparación: exacto si coincide la huella fuerte, aproximado si solo la débil. */
+export const MATCH_TYPES = ["exact", "approximate"] as const;
+export const matchTypeSchema = z.enum(MATCH_TYPES);
+export type MatchType = z.infer<typeof matchTypeSchema>;
+
+export const comparisonEntrySchema = z
+  .object({
+    ruleId: z.string().min(1),
+    impact: impactSchema,
+    matchType: matchTypeSchema.nullable(),
+    baselineFindingId: z.string().nullable(),
+    targetFindingId: z.string().nullable(),
+    affectedNodeCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type ComparisonEntry = z.infer<typeof comparisonEntrySchema>;
+
+export const comparisonResultSchema = z
+  .object({
+    baselineAnalysisId: z.uuid(),
+    targetAnalysisId: z.uuid(),
+    normalizedUrl: z.string().min(1),
+    newFindings: z.array(comparisonEntrySchema),
+    resolvedFindings: z.array(comparisonEntrySchema),
+    persistentFindings: z.array(comparisonEntrySchema),
+    summaryDelta: z
+      .object({
+        automaticFindings: z.number().int(),
+        affectedNodes: z.number().int(),
+        // Un delta puede ser negativo (menos incidencias que antes), por eso no usa impactCountsSchema.
+        byImpact: z
+          .object({
+            critical: z.number().int(),
+            serious: z.number().int(),
+            moderate: z.number().int(),
+            minor: z.number().int(),
+            unknown: z.number().int(),
+          })
+          .strict(),
+      })
+      .strict(),
+    limitations: z.array(z.string()),
+  })
+  .strict();
+export type ComparisonResult = z.infer<typeof comparisonResultSchema>;

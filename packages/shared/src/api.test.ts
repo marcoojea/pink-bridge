@@ -167,3 +167,24 @@ describe("analysisSchema y findingSchema", () => {
     ).toBe(false);
   });
 });
+
+describe("comparisonResultSchema", () => {
+  it("acepta deltas negativos por gravedad, que son válidos al comparar", async () => {
+    const { comparisonResultSchema } = await import("./index.js");
+    const parsed = comparisonResultSchema.safeParse({
+      baselineAnalysisId: TOKEN,
+      targetAnalysisId: "11111111-1111-4111-8111-111111111111",
+      normalizedUrl: "https://example.com/",
+      newFindings: [],
+      resolvedFindings: [],
+      persistentFindings: [],
+      summaryDelta: {
+        automaticFindings: -2,
+        affectedNodes: -3,
+        byImpact: { critical: -1, serious: 0, moderate: 0, minor: 0, unknown: 0 },
+      },
+      limitations: ["x"],
+    });
+    expect(parsed.success).toBe(true);
+  });
+});

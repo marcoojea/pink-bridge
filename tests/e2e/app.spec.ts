@@ -151,3 +151,44 @@ test("una ruta desconocida muestra una página de no encontrada accesible", asyn
   await expect(page.getByRole("heading", { level: 1, name: "Página no encontrada" })).toBeVisible();
   await expectNoAxeViolations(page);
 });
+
+test("revisar una incidencia guarda la nota y dos ejecuciones se comparan desde el histórico", async ({
+  page,
+}) => {
+  await runDemo(page);
+  await expect(page.getByRole("link", { name: "Descargar informe JSON" })).toHaveAttribute(
+    "download",
+    "",
+  );
+
+  await page.getByRole("button", { name: "Ver detalle de image-alt" }).click();
+  const detail = page.getByRole("region", { name: "Detalle: image-alt" });
+  await detail.getByLabel("Estado").selectOption("reviewed");
+  await detail.getByLabel("Nota (opcional)").fill("Revisada en QA");
+  await detail.getByRole("button", { name: "Guardar revisión" }).click();
+  await expect(detail.getByRole("status")).toHaveText("Revisión guardada.");
+  await expect(detail.getByText("Estado de revisión: Revisada")).toBeVisible();
+
+  await runDemo(page);
+  await page.goto("/#/historial");
+  const baseSelect = page.getByLabel("Análisis base");
+  await baseSelect.selectOption({ index: 1 });
+  const baseValue = await baseSelect.inputValue();
+
+  // El destino debe ser un análisis distinto de la base: se elige por valor, no por posición.
+  const targetSelect = page.getByLabel("Análisis a comparar");
+  const optionLocators = await targetSelect.locator("option").all();
+  const values = await Promise.all(optionLocators.map((option) => option.getAttribute("value")));
+  const targetValue = values.find(
+    (value): value is string => value !== null && value !== "" && value !== baseValue,
+  );
+  expect(targetValue).toBeDefined();
+  await targetSelect.selectOption(targetValue ?? "");
+  await page.getByRole("button", { name: "Comparar", exact: true }).click();
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Comparación de análisis" }),
+  ).toBeVisible();
+  await expect(page.getByText("Coincidencia exacta").first()).toBeVisible();
+  await expectNoAxeViolations(page);
+});

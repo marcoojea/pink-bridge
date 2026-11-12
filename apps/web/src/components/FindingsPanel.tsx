@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { Finding, FindingKind, Impact } from "@pink-bridge/shared";
-import { getFindings } from "../api/client.js";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import type { Finding, FindingKind, Impact, ReviewState } from "@pink-bridge/shared";
+import { getFindings, getReviews } from "../api/client.js";
 import { messageOf } from "../views/HomeView.js";
-import { IMPACT_LABELS, KIND_LABELS } from "../labels.js";
+import { IMPACT_LABELS, KIND_LABELS, REVIEW_LABELS } from "../labels.js";
+import { ReviewEditor } from "./ReviewEditor.js";
 
 export interface FindingFilters {
   readonly kind: FindingKind | "";
@@ -26,6 +27,7 @@ const IMPACT_OPTIONS: readonly Impact[] = ["critical", "serious", "moderate", "m
 
 export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [reviews, setReviews] = useState<Record<string, ReviewState>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FindingFilters>(NO_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -33,10 +35,11 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    getFindings(analysisId)
-      .then((items) => {
+    Promise.all([getFindings(analysisId), getReviews(analysisId)])
+      .then(([items, reviewList]) => {
         if (!cancelled) {
           setFindings(items);
+          setReviews(Object.fromEntries(reviewList.map((review) => [review.findingId, review])));
         }
       })
       .catch((error: unknown) => {
@@ -204,7 +207,16 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
         </>
       )}
 
-      {selected !== null && <FindingDetail finding={selected} detailRef={detailRef} />}
+      {selected !== null && (
+        <FindingDetail
+          finding={selected}
+          detailRef={detailRef}
+          review={reviews[selected.id]}
+          onSaved={(saved) => {
+            setReviews((current) => ({ ...current, [saved.findingId]: saved }));
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -212,9 +224,13 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
 function FindingDetail({
   finding,
   detailRef,
+  review,
+  onSaved,
 }: {
   readonly finding: Finding;
-  readonly detailRef: React.RefObject<HTMLElement | null>;
+  readonly detailRef: RefObject<HTMLElement | null>;
+  readonly review: ReviewState | undefined;
+  readonly onSaved: (review: ReviewState) => void;
 }) {
   const isReview = finding.kind === "needs_review";
 
@@ -230,7 +246,9 @@ function FindingDetail({
       <p className="badges">
         <span className={`badge badge-${finding.impact}`}>{IMPACT_LABELS[finding.impact]}</span>
         <span className="badge badge-kind">{KIND_LABELS[finding.kind]}</span>
-        <span className="badge badge-pending">Estado de revisión: pendiente</span>
+        <span className="badge badge-pending">
+          Estado de revisión: {REVIEW_LABELS[review?.status ?? "pending"]}
+        </span>
       </p>
 
       {isReview && (
@@ -286,9 +304,11 @@ function FindingDetail({
         ))}
       </ol>
 
+      <ReviewEditor key={finding.id} finding={finding} review={review} onSaved={onSaved} />
+
       <p className="hint">
         Las incidencias y las comprobaciones de revisión manual se muestran tal como las ha
-        detectado el análisis.
+        detectado el análisis. La revisión humana se guarda aparte y no altera el resultado.
       </p>
     </section>
   );

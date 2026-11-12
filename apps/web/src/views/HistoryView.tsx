@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Analysis } from "@pink-bridge/shared";
 import { createAnalysis, listAnalyses } from "../api/client.js";
+import { CompareForm } from "../components/CompareForm.js";
 import { analysisHref, navigateTo, routeHref } from "../router.js";
 import { formatDate, formatDuration, STATUS_LABELS } from "../labels.js";
 import { messageOf } from "./HomeView.js";
@@ -85,6 +86,8 @@ export function HistoryView() {
           </p>
         </div>
       )}
+
+      {items !== null && <CompareForm items={items} />}
 
       {items !== null && items.length > 0 && (
         <ul className="history-list">

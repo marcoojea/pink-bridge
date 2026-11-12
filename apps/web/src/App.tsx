@@ -1,4 +1,5 @@
 import { AnalysisView } from "./views/AnalysisView.js";
+import { ComparisonView } from "./views/ComparisonView.js";
 import { HistoryView } from "./views/HistoryView.js";
 import { HomeView } from "./views/HomeView.js";
 import { routeHref, useRoute } from "./router.js";
@@ -35,6 +36,9 @@ export function App() {
         {route.name === "home" && <HomeView />}
         {route.name === "history" && <HistoryView />}
         {route.name === "analysis" && <AnalysisView key={route.id} id={route.id} />}
+        {route.name === "compare" && (
+          <ComparisonView key={`${route.from}-${route.to}`} from={route.from} to={route.to} />
+        )}
         {route.name === "notFound" && (
           <section className="card">
             <h1 tabIndex={-1}>Página no encontrada</h1>
