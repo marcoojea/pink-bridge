@@ -28,6 +28,14 @@ jobs:
       - name: Instalar Chromium para Playwright
         run: npx playwright install --with-deps chromium
 
+      # Ubuntu reciente restringe los namespaces de usuario y el sandbox de Chromium falla.
+      # Se habilita en el runner de CI; el producto mantiene chromiumSandbox: true.
+      - name: Habilitar sandbox de Chromium en el runner
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
