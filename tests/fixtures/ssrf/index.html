@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subrecursos hostiles para pruebas de SSRF</title>
+  </head>
+  <body>
+    <main>
+      <h1>Subrecursos que el motor debe bloquear</h1>
+      <!-- Metadatos de nube: nunca deben solicitarse -->
+      <img src="http://169.254.169.254/latest/meta-data/" alt="metadatos cloud" />
+      <!-- Red privada RFC 1918 -->
+      <img src="http://10.0.0.1/recurso.png" alt="red privada" />
+      <!-- Ruta del mismo origen de demostración que no existe: debe responder 404 -->
+      <img src="https://demo.pinkbridge.test/no-existe.png" alt="ruta inexistente" />
+      <!-- Host que no resuelve -->
+      <img src="http://no-existe.invalid/recurso.png" alt="dns inexistente" />
+    </main>
+  </body>
+</html>
