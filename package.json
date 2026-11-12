@@ -1,0 +1,66 @@
+{
+  "name": "pink-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de auditoría de accesibilidad web y generación de informes QA",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @pink-bridge/shared",
+    "dev:api": "npm run build:shared && npm run dev -w @pink-bridge/api",
+    "dev:web": "npm run build:shared && npm run dev -w @pink-bridge/web",
+    "build": "npm run build:shared && npm run build --workspaces --if-present",
+    "lint": "npm run build:shared && eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present && tsc -p tsconfig.json",
+    "test:unit": "npm run build:shared && npm run test:unit --workspaces --if-present",
+    "test:integration": "npm run build:shared && npm run test:integration --workspaces --if-present",
+    "test:e2e": "npm run build:shared && playwright test",
+    "audit": "npm audit --audit-level=high",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,mjs,js,json,css,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,mjs,js}": [
+      "eslint --no-warn-ignored"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.65.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/coverage-v8": "^5.1.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
+}
