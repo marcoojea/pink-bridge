@@ -25,7 +25,7 @@ import type { AnalysisRecord, AnalysisStore, FindingFilter } from "./store.js";
 
 export class ServiceError extends Error {
   constructor(
-    readonly status: 404 | 409,
+    readonly status: 404 | 409 | 429,
     readonly code: string,
     message: string,
   ) {
@@ -46,6 +46,7 @@ export interface AnalysisServiceOptions {
   readonly runLimits?: RunOptions["limits"];
   readonly allowedPorts?: readonly number[];
   readonly logger?: AnalysisLogger | undefined;
+  readonly maxPending?: number;
   readonly now?: () => Date;
 }
 
@@ -108,6 +109,7 @@ export class AnalysisService {
   private readonly allowedPorts: readonly number[] | undefined;
   private readonly logger: AnalysisLogger | undefined;
   private readonly now: () => Date;
+  private readonly maxPending: number;
 
   private readonly queue: string[] = [];
   private pumping: Promise<void> | null = null;
@@ -121,6 +123,7 @@ export class AnalysisService {
     this.allowedPorts = options.allowedPorts;
     this.logger = options.logger;
     this.now = options.now ?? (() => new Date());
+    this.maxPending = options.maxPending ?? 20;
   }
 
   /**
@@ -128,6 +131,13 @@ export class AnalysisService {
    * (evita duplicados por reenvíos accidentales; una repetición intencionada usa otro token).
    */
   async create(request: CreateAnalysisRequest): Promise<CreateOutcome> {
+    if (this.queue.length >= this.maxPending) {
+      throw new ServiceError(
+        429,
+        "queue_full",
+        "Hay demasiados análisis en cola. Inténtalo más tarde.",
+      );
+    }
     const existing = await this.store.findBySubmissionToken(request.submissionToken);
     if (existing) {
       return { created: false, analysis: toPublicAnalysis(existing) };
@@ -316,7 +326,7 @@ export class AnalysisService {
     const target = normalizeTargetUrl(request.url ?? "", this.allowedPorts);
     return {
       kind: "url",
-      url: request.url ?? "",
+      url: target.normalized,
       normalizedUrl: target.normalized,
       runSource: { kind: "url", url: target.url },
     };

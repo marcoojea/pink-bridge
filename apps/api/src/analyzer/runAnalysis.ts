@@ -202,6 +202,7 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
     try {
       browser = await chromium.launch({
         headless: true,
+        args: ["--force-webrtc-ip-handling-policy=disable_non_proxied_udp"],
         chromiumSandbox: true,
         proxy: { server: `http://127.0.0.1:${String(proxy.port)}`, bypass: "<-loopback>" },
       });

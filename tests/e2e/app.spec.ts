@@ -192,3 +192,38 @@ test("revisar una incidencia guarda la nota y dos ejecuciones se comparan desde 
   await expect(page.getByText("Coincidencia exacta").first()).toBeVisible();
   await expectNoAxeViolations(page);
 });
+
+async function expectNoHorizontalScroll(page: Page): Promise<void> {
+  const overflow = await page.evaluate<number>(
+    "document.documentElement.scrollWidth - document.documentElement.clientWidth",
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+}
+
+test("sin desplazamiento horizontal a 320 px en portada y resultados", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/#/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expectNoHorizontalScroll(page);
+
+  await runDemo(page);
+  await expectNoHorizontalScroll(page);
+});
+
+test("el formulario de revisión se recorre completo con teclado", async ({ page }) => {
+  await runDemo(page);
+  await page.getByRole("button", { name: "Ver detalle de image-alt" }).focus();
+  await page.keyboard.press("Enter");
+
+  const detail = page.getByRole("region", { name: "Detalle: image-alt" });
+  await expect(detail).toBeFocused();
+  await detail.getByLabel("Estado").focus();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Tab");
+  await expect(detail.getByLabel("Nota (opcional)")).toBeFocused();
+  await page.keyboard.type("Revisado con teclado");
+  await page.keyboard.press("Tab");
+  await expect(detail.getByRole("button", { name: "Guardar revisión" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(detail.getByRole("status")).toHaveText("Revisión guardada.");
+});

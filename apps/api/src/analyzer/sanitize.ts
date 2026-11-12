@@ -1,7 +1,7 @@
 export const MAX_SNIPPET_LENGTH = 400;
 
 const SENSITIVE_ATTRIBUTE =
-  /^(value|password|passwd|token|secret|api[-_]?key|auth|authorization|cookie|session)/i;
+  /(^|[-_:])(value|password|passwd|token|secret|api[-_]?key|auth|authorization|cookie|session|csrf)/i;
 
 export interface SanitizedSnippet {
   readonly content: string;
@@ -18,7 +18,7 @@ export function sanitizeHtmlSnippet(raw: string): SanitizedSnippet {
 
   let content = raw.replace(/\s+/g, " ").trim();
 
-  content = content.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, () => {
+  content = content.replace(/<script\b[^>]*>[\s\S]*?(?:<\/script\s*>|$)/gi, () => {
     redacted = true;
     return "<script>[contenido omitido]</script>";
   });

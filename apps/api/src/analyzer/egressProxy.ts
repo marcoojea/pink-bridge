@@ -147,6 +147,15 @@ async function handleHttp(
       response.destroy();
     }
   });
+  let uploaded = 0;
+  request.on("data", (chunk: Buffer) => {
+    uploaded += chunk.length;
+    if (uploaded > policy.maxBytes) {
+      events.tooLarge = true;
+      request.destroy();
+      upstream.destroy();
+    }
+  });
   request.pipe(upstream);
 }
 

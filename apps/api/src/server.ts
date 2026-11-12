@@ -6,6 +6,12 @@ import { openDatabase, SqliteAnalysisStore } from "./persistence/sqlite.js";
 
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST ?? "127.0.0.1";
+const LOOPBACK = new Set(["127.0.0.1", "::1", "localhost"]);
+if (!LOOPBACK.has(host) && process.env.PINK_BRIDGE_ALLOW_REMOTE !== "1") {
+  throw new Error(
+    "HOST no es loopback. Para exponer la API define PINK_BRIDGE_ALLOW_REMOTE=1 y un control de acceso delante.",
+  );
+}
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("PORT debe ser un entero entre 1 y 65535.");

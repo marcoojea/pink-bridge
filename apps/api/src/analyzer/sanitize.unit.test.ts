@@ -42,3 +42,17 @@ describe("sanitizeHtmlSnippet", () => {
     expect(result.content.length).toBe(MAX_SNIPPET_LENGTH + 1);
   });
 });
+
+describe("sanitizeHtmlSnippet (endurecimiento)", () => {
+  it("redacta atributos con token, api key o csrf en cualquier posición del nombre", () => {
+    const result = sanitizeHtmlSnippet('<input data-token="abc" x-api-key="k1" csrf-token="c2">');
+    expect(result.content).not.toMatch(/abc|k1|c2/);
+    expect(result.redacted).toBe(true);
+  });
+
+  it("elimina el contenido de un script sin etiqueta de cierre", () => {
+    const result = sanitizeHtmlSnippet("<div>ok<script>var secreto = 1;");
+    expect(result.content).not.toContain("secreto");
+    expect(result.redacted).toBe(true);
+  });
+});

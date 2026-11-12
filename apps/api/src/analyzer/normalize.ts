@@ -136,7 +136,7 @@ function buildFinding(
     ruleId: rule.id,
     description: explanation.explanation,
     help: rule.help,
-    helpUrl: rule.helpUrl ?? null,
+    helpUrl: rule.helpUrl?.startsWith("https://") ? rule.helpUrl : null,
     impact: toImpact(rule.impact),
     wcagReferences: wcagReferencesFromTags(rule.tags),
     affectedNodeCount: nodes.length,
