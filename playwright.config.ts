@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = Boolean(process.env.CI);
@@ -21,6 +23,11 @@ export default defineConfig({
   webServer: [
     {
       command: "npm run dev -w @pink-bridge/api",
+      env: {
+        PINK_BRIDGE_ENABLE_DEMO: "1",
+        // Base de datos aislada por ejecución: las pruebas no dependen de análisis anteriores.
+        PINK_BRIDGE_DB: join(tmpdir(), `pink-bridge-e2e-${String(Date.now())}.sqlite`),
+      },
       url: "http://127.0.0.1:3001/api/health",
       reuseExistingServer: !isCI,
       timeout: 60_000,

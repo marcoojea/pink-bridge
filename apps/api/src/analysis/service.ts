@@ -1,0 +1,335 @@
+import { randomUUID } from "node:crypto";
+import type {
+  Analysis,
+  AnalysisErrorCode,
+  AnalysisStage,
+  CreateAnalysisRequest,
+  Finding,
+  FindingsQuery,
+} from "@pink-bridge/shared";
+import { normalizeAxeResults } from "../analyzer/normalize.js";
+import {
+  AnalysisRunError,
+  DEMO_ORIGIN,
+  runAnalysis,
+  type RunOptions,
+  type RunResult,
+  type RunSource,
+} from "../analyzer/runAnalysis.js";
+import { normalizeTargetUrl } from "../analyzer/urlPolicy.js";
+import type { AnalysisRecord, AnalysisStore, FindingFilter } from "./store.js";
+
+export class ServiceError extends Error {
+  constructor(
+    readonly status: 404 | 409,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ServiceError";
+  }
+}
+
+export interface AnalysisLogger {
+  error(context: Record<string, unknown>, message: string): void;
+}
+
+export interface AnalysisServiceOptions {
+  readonly store: AnalysisStore;
+  /** Fixture de demostración. Solo se habilita en desarrollo y pruebas. */
+  readonly demoFixturePath?: string | undefined;
+  readonly runner?: (options: RunOptions) => Promise<RunResult>;
+  readonly runLimits?: RunOptions["limits"];
+  readonly allowedPorts?: readonly number[];
+  readonly logger?: AnalysisLogger | undefined;
+  readonly now?: () => Date;
+}
+
+export interface CreateOutcome {
+  readonly created: boolean;
+  readonly analysis: Analysis;
+}
+
+/** Convierte un registro interno en la forma pública (sin token de envío). */
+export function toPublicAnalysis(record: AnalysisRecord): Analysis {
+  return {
+    id: record.id,
+    url: record.url,
+    normalizedUrl: record.normalizedUrl,
+    source: record.source,
+    createdAt: record.createdAt,
+    startedAt: record.startedAt,
+    finishedAt: record.finishedAt,
+    durationMs: record.durationMs,
+    status: record.status,
+    stage: record.stage,
+    axeVersion: record.axeVersion,
+    summary: record.summary,
+    errorCode: record.errorCode,
+    errorMessage: record.errorMessage,
+  };
+}
+
+const SAFE_MESSAGES: Readonly<Record<AnalysisErrorCode, string>> = {
+  invalid_url: "La URL no es válida.",
+  url_too_long: "La URL supera la longitud máxima permitida.",
+  unsupported_protocol: "Solo se admiten URLs http y https.",
+  credentials_in_url: "La URL no puede incluir credenciales.",
+  sensitive_query_parameter:
+    "La URL contiene parámetros que podrían incluir credenciales o tokens.",
+  blocked_destination: "El destino no está permitido.",
+  dns_error: "No se pudo resolver el nombre de host.",
+  navigation_timeout: "La página tardó demasiado en cargar.",
+  navigation_failed: "No se pudo cargar la página.",
+  certificate_error: "El certificado HTTPS de la página no es válido.",
+  http_error: "La página respondió con un error HTTP.",
+  non_html_content: "El recurso no es una página HTML.",
+  response_too_large: "Un recurso de la página supera el tamaño máximo.",
+  browser_error: "No se pudo preparar el navegador de análisis.",
+  checks_error: "Las comprobaciones de accesibilidad no pudieron completarse.",
+  analysis_timeout: "El análisis superó el tiempo máximo permitido.",
+  interrupted: "El análisis se interrumpió al reiniciar el servidor.",
+  persistence_error: "No se pudieron guardar los resultados del análisis.",
+};
+
+/**
+ * Orquesta los análisis: crea registros, los encola y ejecuta un único trabajo a la vez.
+ * Cada transición de estado se persiste antes de continuar.
+ */
+export class AnalysisService {
+  private readonly store: AnalysisStore;
+  private readonly demoFixturePath: string | undefined;
+  private readonly runner: (options: RunOptions) => Promise<RunResult>;
+  private readonly runLimits: RunOptions["limits"];
+  private readonly allowedPorts: readonly number[] | undefined;
+  private readonly logger: AnalysisLogger | undefined;
+  private readonly now: () => Date;
+
+  private readonly queue: string[] = [];
+  private pumping: Promise<void> | null = null;
+  private accepting = true;
+
+  constructor(options: AnalysisServiceOptions) {
+    this.store = options.store;
+    this.demoFixturePath = options.demoFixturePath;
+    this.runner = options.runner ?? runAnalysis;
+    this.runLimits = options.runLimits;
+    this.allowedPorts = options.allowedPorts;
+    this.logger = options.logger;
+    this.now = options.now ?? (() => new Date());
+  }
+
+  /**
+   * Crea un análisis. Si el token de envío ya existe, devuelve el análisis existente
+   * (evita duplicados por reenvíos accidentales; una repetición intencionada usa otro token).
+   */
+  async create(request: CreateAnalysisRequest): Promise<CreateOutcome> {
+    const existing = await this.store.findBySubmissionToken(request.submissionToken);
+    if (existing) {
+      return { created: false, analysis: toPublicAnalysis(existing) };
+    }
+
+    const source = this.resolveSource(request);
+    const record: AnalysisRecord = {
+      id: randomUUID(),
+      url: source.url,
+      normalizedUrl: source.normalizedUrl,
+      source: source.kind,
+      submissionToken: request.submissionToken,
+      createdAt: this.now().toISOString(),
+      startedAt: null,
+      finishedAt: null,
+      durationMs: null,
+      status: "queued",
+      stage: null,
+      axeVersion: null,
+      summary: null,
+      errorCode: null,
+      errorMessage: null,
+    };
+
+    await this.store.insertAnalysis(record);
+    this.enqueue(record.id);
+    return { created: true, analysis: toPublicAnalysis(record) };
+  }
+
+  async get(id: string): Promise<Analysis | undefined> {
+    const record = await this.store.getAnalysis(id);
+    return record ? toPublicAnalysis(record) : undefined;
+  }
+
+  async list(limit: number, offset: number): Promise<{ items: Analysis[]; total: number }> {
+    const page = await this.store.listAnalyses(limit, offset);
+    return { items: page.items.map(toPublicAnalysis), total: page.total };
+  }
+
+  async findings(analysisId: string, query: FindingsQuery): Promise<Finding[] | undefined> {
+    const analysis = await this.store.getAnalysis(analysisId);
+    if (!analysis) {
+      return undefined;
+    }
+    const filter: FindingFilter = {
+      ...(query.kind !== undefined ? { kind: query.kind } : {}),
+      ...(query.impact !== undefined ? { impact: query.impact } : {}),
+      ...(query.ruleId !== undefined ? { ruleId: query.ruleId } : {}),
+    };
+    return this.store.listFindings(analysisId, filter);
+  }
+
+  /** Marca como fallidos los análisis que quedaron en cola o en curso tras un reinicio. */
+  async recoverInterrupted(): Promise<number> {
+    const pending = await this.store.listByStatus(["queued", "running"]);
+    const finishedAt = this.now().toISOString();
+    for (const record of pending) {
+      await this.store.updateAnalysis(record.id, {
+        status: "failed",
+        stage: null,
+        finishedAt,
+        errorCode: "interrupted",
+        errorMessage: SAFE_MESSAGES.interrupted,
+      });
+    }
+    return pending.length;
+  }
+
+  /** Espera a que la cola quede vacía. Útil en pruebas y para un cierre ordenado. */
+  async drain(): Promise<void> {
+    while (this.pumping !== null) {
+      await this.pumping;
+    }
+  }
+
+  /** Deja de aceptar trabajos nuevos y espera al que esté en curso. */
+  async stop(): Promise<void> {
+    this.accepting = false;
+    this.queue.length = 0;
+    await this.drain();
+  }
+
+  private resolveSource(request: CreateAnalysisRequest): {
+    kind: "url" | "demo";
+    url: string;
+    normalizedUrl: string;
+    runSource: RunSource;
+  } {
+    if (request.target === "demo") {
+      if (this.demoFixturePath === undefined) {
+        throw new ServiceError(
+          404,
+          "not_found",
+          "La demostración no está disponible en este entorno.",
+        );
+      }
+      return {
+        kind: "demo",
+        url: `${DEMO_ORIGIN}/`,
+        normalizedUrl: `${DEMO_ORIGIN}/`,
+        runSource: { kind: "demo", fixturePath: this.demoFixturePath },
+      };
+    }
+
+    const target = normalizeTargetUrl(request.url ?? "", this.allowedPorts);
+    return {
+      kind: "url",
+      url: request.url ?? "",
+      normalizedUrl: target.normalized,
+      runSource: { kind: "url", url: target.url },
+    };
+  }
+
+  private enqueue(id: string): void {
+    if (!this.accepting) {
+      return;
+    }
+    this.queue.push(id);
+    this.pumping ??= this.pump();
+  }
+
+  private async pump(): Promise<void> {
+    try {
+      while (this.queue.length > 0 && this.accepting) {
+        const id = this.queue.shift();
+        if (id !== undefined) {
+          await this.execute(id);
+        }
+      }
+    } finally {
+      this.pumping = null;
+    }
+  }
+
+  private async execute(id: string): Promise<void> {
+    const record = await this.store.getAnalysis(id);
+    if (!record) {
+      return;
+    }
+
+    const startedAt = this.now();
+    await this.store.updateAnalysis(id, {
+      status: "running",
+      startedAt: startedAt.toISOString(),
+      stage: "validating",
+    });
+
+    const source: RunSource =
+      record.source === "demo" && this.demoFixturePath !== undefined
+        ? { kind: "demo", fixturePath: this.demoFixturePath }
+        : { kind: "url", url: new URL(record.normalizedUrl) };
+
+    try {
+      const result = await this.runner({
+        source,
+        ...(this.runLimits !== undefined ? { limits: this.runLimits } : {}),
+        ...(this.allowedPorts !== undefined ? { allowedPorts: this.allowedPorts } : {}),
+        onStage: (stage: AnalysisStage) => {
+          this.store.updateAnalysis(id, { stage }).catch(() => undefined);
+        },
+      });
+
+      await this.store.updateAnalysis(id, { stage: "processing_results" });
+      const normalized = normalizeAxeResults(result.raw, {
+        analysisId: id,
+        detectedAt: this.now().toISOString(),
+      });
+
+      await this.store.updateAnalysis(id, { stage: "saving_report" });
+      try {
+        await this.store.insertFindings(id, normalized.findings);
+      } catch {
+        throw new AnalysisRunError("persistence_error", SAFE_MESSAGES.persistence_error);
+      }
+
+      const finishedAt = this.now();
+      await this.store.updateAnalysis(id, {
+        status: "completed",
+        stage: "completed",
+        finishedAt: finishedAt.toISOString(),
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        axeVersion: normalized.axeVersion,
+        summary: normalized.summary,
+        errorCode: null,
+        errorMessage: null,
+      });
+    } catch (error) {
+      await this.fail(id, startedAt, error);
+    }
+  }
+
+  private async fail(id: string, startedAt: Date, error: unknown): Promise<void> {
+    const code: AnalysisErrorCode =
+      error instanceof AnalysisRunError ? error.code : "browser_error";
+    if (!(error instanceof AnalysisRunError)) {
+      this.logger?.error({ analysisId: id, err: error }, "Fallo inesperado durante el análisis");
+    }
+    const finishedAt = this.now();
+    await this.store.updateAnalysis(id, {
+      status: "failed",
+      stage: null,
+      finishedAt: finishedAt.toISOString(),
+      durationMs: finishedAt.getTime() - startedAt.getTime(),
+      summary: null,
+      errorCode: code,
+      errorMessage: SAFE_MESSAGES[code],
+    });
+  }
+}

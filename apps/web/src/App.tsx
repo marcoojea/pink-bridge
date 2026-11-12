@@ -1,52 +1,10 @@
-import { useEffect, useState } from "react";
-import { healthResponseSchema } from "@pink-bridge/shared";
-
-export type ApiStatus = { kind: "loading" } | { kind: "ok"; version: string } | { kind: "error" };
-
-export async function fetchApiStatus(signal: AbortSignal): Promise<ApiStatus> {
-  try {
-    const response = await fetch("/api/health", { signal });
-    if (!response.ok) {
-      return { kind: "error" };
-    }
-    const parsed = healthResponseSchema.safeParse(await response.json());
-    if (!parsed.success) {
-      return { kind: "error" };
-    }
-    return { kind: "ok", version: parsed.data.version };
-  } catch {
-    if (signal.aborted) {
-      return { kind: "loading" };
-    }
-    return { kind: "error" };
-  }
-}
-
-function describeStatus(status: ApiStatus): string {
-  switch (status.kind) {
-    case "loading":
-      return "Comprobando la API…";
-    case "ok":
-      return `API disponible (versión ${status.version}).`;
-    case "error":
-      return "No se pudo conectar con la API.";
-  }
-}
+import { AnalysisView } from "./views/AnalysisView.js";
+import { HistoryView } from "./views/HistoryView.js";
+import { HomeView } from "./views/HomeView.js";
+import { routeHref, useRoute } from "./router.js";
 
 export function App() {
-  const [status, setStatus] = useState<ApiStatus>({ kind: "loading" });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetchApiStatus(controller.signal).then((result) => {
-      if (!controller.signal.aborted) {
-        setStatus(result);
-      }
-    });
-    return () => {
-      controller.abort();
-    };
-  }, []);
+  const route = useRoute();
 
   return (
     <>
@@ -54,16 +12,37 @@ export function App() {
         Saltar al contenido
       </a>
       <header className="site-header">
-        <h1>Pink Bridge</h1>
-        <p>Auditoría de accesibilidad web e informes QA.</p>
+        <p className="brand">Pink Bridge</p>
+        <nav aria-label="Principal">
+          <ul className="nav-list">
+            <li>
+              <a href={routeHref("home")} aria-current={route.name === "home" ? "page" : undefined}>
+                Nuevo análisis
+              </a>
+            </li>
+            <li>
+              <a
+                href={routeHref("history")}
+                aria-current={route.name === "history" ? "page" : undefined}
+              >
+                Histórico
+              </a>
+            </li>
+          </ul>
+        </nav>
       </header>
       <main id="contenido" tabIndex={-1}>
-        <section aria-labelledby="estado-api">
-          <h2 id="estado-api">Estado de la API</h2>
-          <p role="status" aria-live="polite">
-            {describeStatus(status)}
-          </p>
-        </section>
+        {route.name === "home" && <HomeView />}
+        {route.name === "history" && <HistoryView />}
+        {route.name === "analysis" && <AnalysisView key={route.id} id={route.id} />}
+        {route.name === "notFound" && (
+          <section className="card">
+            <h1 tabIndex={-1}>Página no encontrada</h1>
+            <p>
+              <a href={routeHref("home")}>Volver al inicio</a>
+            </p>
+          </section>
+        )}
       </main>
     </>
   );
