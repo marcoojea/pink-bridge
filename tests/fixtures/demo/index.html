@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Página de demostración con defectos intencionados</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        color: #111;
+        background: #fff;
+      }
+      .low-contrast {
+        color: #9aa0a6;
+        background: #ffffff;
+      }
+      .fake-button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #1f5fbf;
+        color: #fff;
+        cursor: pointer;
+      }
+      .error {
+        color: #b00020;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- DEMO-001: imagen sin atributo alt -->
+      <img src="logo.png" width="120" height="40" />
+
+      <!-- DEMO-005: encabezados desordenados (h1 → h4, sin h2 ni h3) -->
+      <h1>Demostración de accesibilidad</h1>
+      <h4>Sección con encabezado saltado</h4>
+
+      <!-- DEMO-004: contraste insuficiente -->
+      <p class="low-contrast">Texto con contraste insuficiente (gris claro sobre blanco).</p>
+
+      <!-- DEMO-002: botón sin nombre accesible -->
+      <button type="button">
+        <svg width="16" height="16" aria-hidden="true"><rect width="16" height="16" /></svg>
+      </button>
+
+      <!-- DEMO-003: campo sin label asociado -->
+      <form id="contact" action="#" novalidate>
+        <input type="text" name="nombre" placeholder="Nombre" />
+
+        <!-- DEMO-007: error comunicado solo con color, sin texto asociado ni aria-invalid -->
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" value="no-es-un-correo" />
+        <span class="error">Formato incorrecto</span>
+
+        <button type="submit">Enviar</button>
+      </form>
+
+      <!-- DEMO-006: enlace vacío -->
+      <p>Más información: <a href="/ayuda"></a></p>
+
+      <!-- DEMO-008: componente interactivo inaccesible con teclado -->
+      <div class="fake-button" onclick="this.textContent = 'Pulsado'">Acción personalizada</div>
+
+      <!-- Revisión manual: flujo de foco, zoom 200 %, reflow y lector de pantalla -->
+      <p>Revisar manualmente el orden de tabulación, el foco visible y el reflow al 200 %.</p>
+    </main>
+  </body>
+</html>
