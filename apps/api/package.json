@@ -14,7 +14,11 @@
   "dependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@pink-bridge/shared": "0.1.0",
+    "better-sqlite3": "^12.11.1",
     "fastify": "^5.12.8",
     "playwright": "^1.65.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }

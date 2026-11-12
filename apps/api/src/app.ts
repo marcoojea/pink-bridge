@@ -1,14 +1,38 @@
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { API_VERSION, createApiError } from "@pink-bridge/shared";
+import { AnalysisService } from "./analysis/service.js";
+import { InMemoryAnalysisStore, type AnalysisStore } from "./analysis/store.js";
+import { registerAnalysisRoutes } from "./routes/analyses.js";
+import type { AnalysisServiceOptions } from "./analysis/service.js";
 
 export interface BuildAppOptions {
   logger?: boolean;
+  /** Almacén del análisis. Por defecto, memoria (Fase 4). */
+  store?: AnalysisStore;
+  /** Opciones del servicio (fixture de demo, límites, puertos, runner de pruebas…). */
+  service?: Omit<AnalysisServiceOptions, "store" | "logger">;
 }
 
-export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
+export interface PinkBridgeApp {
+  readonly app: FastifyInstance;
+  readonly service: AnalysisService;
+}
+
+export function createPinkBridge(options: BuildAppOptions = {}): PinkBridgeApp {
   const app = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 16 * 1024,
+  });
+
+  const store = options.store ?? new InMemoryAnalysisStore();
+  const service = new AnalysisService({
+    ...options.service,
+    store,
+    logger: {
+      error: (context, message) => {
+        app.log.error(context, message);
+      },
+    },
   });
 
   app.addHook("onSend", (_request, reply, payload, done) => {
@@ -18,11 +42,17 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     done(null, payload);
   });
 
+  app.addHook("onClose", async () => {
+    await service.stop();
+  });
+
   app.get("/api/health", () => ({
     status: "ok" as const,
     service: "pink-bridge-api" as const,
     version: API_VERSION,
   }));
+
+  registerAnalysisRoutes(app, service);
 
   app.setNotFoundHandler((_request, reply) => {
     reply.code(404).send(createApiError("not_found", "Recurso no encontrado."));
@@ -38,5 +68,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     reply.code(500).send(createApiError("internal_error", "Error interno del servidor."));
   });
 
-  return app;
+  return { app, service };
+}
+
+/** Compatibilidad con las pruebas de Fase 1: devuelve solo la instancia de Fastify. */
+export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
+  return createPinkBridge(options).app;
 }
