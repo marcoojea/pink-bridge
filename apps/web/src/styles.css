@@ -1,0 +1,87 @@
+:root {
+  color-scheme: light dark;
+  --color-bg: #fdf7fa;
+  --color-text: #1d1520;
+  --color-muted: #5a4a5c;
+  --color-accent: #8a1c5c;
+  --color-focus: #1f5fbf;
+  --color-surface: #ffffff;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1a1219;
+    --color-text: #f7eef4;
+    --color-muted: #d3c2d0;
+    --color-accent: #f2a7cf;
+    --color-focus: #9cc4ff;
+    --color-surface: #251c26;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.site-header,
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+h1 {
+  color: var(--color-accent);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  margin-bottom: 0.25rem;
+}
+
+p {
+  color: var(--color-muted);
+}
+
+section {
+  background: var(--color-surface);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
