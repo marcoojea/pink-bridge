@@ -2,7 +2,7 @@
 
 Plataforma de auditoría de accesibilidad web y generación de informes QA. Analiza una URL en un navegador aislado con axe-core, separa las incidencias automáticas de las comprobaciones que requieren revisión manual, guarda cada ejecución y permite revisar, exportar y comparar.
 
-> **Alcance actual:** una URL y un único documento por análisis. Sin autenticación, sin crawling y sin pensar en exposición pública: es una herramienta de uso local o interno. Ver [Limitaciones](#limitaciones-y-riesgos-residuales).
+> **Alcance actual:** una URL o un sitio acotado por `maxPages` en el mismo dominio. Sin autenticación ni cuotas: es una herramienta de uso local o interno. Ver [Limitaciones](#limitaciones-y-riesgos-residuales).
 
 ## Funcionalidades
 
@@ -13,7 +13,10 @@ Plataforma de auditoría de accesibilidad web y generación de informes QA. Anal
 - Informes descargables en JSON y HTML, generados desde el mismo modelo.
 - Histórico persistente en SQLite. Repetir un análisis crea otro nuevo y no sobrescribe el anterior.
 - Comparación de dos análisis completados de la misma URL: nuevas, resueltas y persistentes.
-- Demostración con un fixture de defectos documentados (ver [catálogo](docs/fixture-catalog.md)).
+- Recorrido de sitio: hasta 10 páginas del mismo dominio, cada una en móvil (390), tablet (768) y escritorio (1280). Cada incidencia indica página y tamaño.
+- Pruebas QA además de axe: errores de consola y de página, recursos con error HTTP, contenido mixto, enlaces rotos entre las páginas visitadas, y formularios probados con envío vacío y con datos de prueba (los envíos no-GET se interceptan y nunca salen a la red).
+- Prompt exportable (Markdown) para Claude Code o Codex, con los fragmentos HTML delimitados como datos.
+- Demostración con un fixture de defectos documentados (ver [catálogo](docs/fixture-catalog.md)); demo de sitio multipágina con `target: "demo-site"`.
 
 ## Stack
 
@@ -51,12 +54,13 @@ npm run dev:web                             # Interfaz en http://127.0.0.1:5173 
 
 ## Variables de entorno
 
-| Variable                  | Por defecto               | Uso                                                            |
-| ------------------------- | ------------------------- | -------------------------------------------------------------- |
-| `PORT`                    | `3001`                    | Puerto de la API                                               |
-| `HOST`                    | `127.0.0.1`               | Interfaz de escucha de la API                                  |
-| `PINK_BRIDGE_DB`          | `data/pink-bridge.sqlite` | Fichero de la base de datos (carpeta `data/` ignorada por git) |
-| `PINK_BRIDGE_ENABLE_DEMO` | desactivada               | Habilita el fixture de demostración                            |
+| Variable                   | Por defecto               | Uso                                                                         |
+| -------------------------- | ------------------------- | --------------------------------------------------------------------------- |
+| `PORT`                     | `3001`                    | Puerto de la API                                                            |
+| `HOST`                     | `127.0.0.1`               | Interfaz de escucha de la API                                               |
+| `PINK_BRIDGE_DB`           | `data/pink-bridge.sqlite` | Fichero de la base de datos (carpeta `data/` ignorada por git)              |
+| `PINK_BRIDGE_ENABLE_DEMO`  | desactivada               | Habilita el fixture de demostración                                         |
+| `PINK_BRIDGE_ALLOW_REMOTE` | desactivada               | Permite `HOST` distinto de loopback. Sin control de acceso delante, no usar |
 
 ## Comandos
 
@@ -75,17 +79,18 @@ Umbrales de cobertura (fallan el comando si no se cumplen): líneas y sentencias
 
 ## API
 
-| Método y ruta                                       | Descripción                                                                                                            |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`                                   | Estado del servicio                                                                                                    |
-| `POST /api/analyses`                                | Crea un análisis (`url` o `target: "demo"`, y `submissionToken` UUID). `202` si es nuevo, `200` si el token ya existía |
-| `GET /api/analyses?limit&offset`                    | Histórico paginado                                                                                                     |
-| `GET /api/analyses/:id`                             | Estado, etapa, resumen y errores de un análisis                                                                        |
-| `GET /api/analyses/:id/findings?kind&impact&ruleId` | Incidencias con filtros                                                                                                |
-| `GET /api/analyses/:id/reviews`                     | Estados de revisión del análisis                                                                                       |
-| `PATCH /api/findings/:id/review`                    | Guarda estado y nota de revisión                                                                                       |
-| `GET /api/analyses/:id/report?format=json\|html`    | Informe descargable (solo análisis completados)                                                                        |
-| `GET /api/analyses/compare?from&to`                 | Comparación de dos análisis completados de la misma URL                                                                |
+| Método y ruta                                       | Descripción                                                                                                                                                                         |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/health`                                   | Estado del servicio                                                                                                                                                                 |
+| `POST /api/analyses`                                | Crea un análisis: `url` o `target` (`"demo"` o `"demo-site"`), `submissionToken` UUID y, para recorrer el sitio, `maxPages` (1–10). `202` si es nuevo, `200` si el token ya existía |
+| `GET /api/analyses?limit&offset`                    | Histórico paginado                                                                                                                                                                  |
+| `GET /api/analyses/:id`                             | Estado, etapa, resumen y errores de un análisis                                                                                                                                     |
+| `GET /api/analyses/:id/findings?kind&impact&ruleId` | Incidencias con filtros                                                                                                                                                             |
+| `GET /api/analyses/:id/reviews`                     | Estados de revisión del análisis                                                                                                                                                    |
+| `GET /api/analyses/:id/agent-prompts`               | Markdown con las incidencias pendientes para un agente de código (solo análisis completados)                                                                                        |
+| `PATCH /api/findings/:id/review`                    | Guarda estado y nota de revisión                                                                                                                                                    |
+| `GET /api/analyses/:id/report?format=json\|html`    | Informe descargable (solo análisis completados)                                                                                                                                     |
+| `GET /api/analyses/compare?from&to`                 | Comparación de dos análisis completados de la misma URL                                                                                                                             |
 
 Los errores siguen el formato `{ "error": { "code", "message" } }`. Un análisis fallido responde con su `errorCode`; nunca se presenta como ausencia de incidencias.
 
@@ -129,7 +134,13 @@ docs/
 - **Resolución por conexión.** Cada conexión resuelve y valida el nombre en el momento y conecta a esa IP, sin volver a resolver. No hay fijación de DNS entre conexiones distintas del mismo host: cada una se valida por separado. Como defensa en profundidad, el despliegue debería limitar la salida de red del proceso de la API.
 - **Comparación aproximada.** Las coincidencias aproximadas comparan regla y fragmento HTML, no selector; pueden no ser el mismo elemento. Una incidencia "resuelta" no está verificada como corregida.
 - **Revisiones por análisis.** Los estados de revisión son de cada análisis: una nueva ejecución empieza con las incidencias sin revisar.
-- **Sin autenticación ni cuotas.** No exponer en internet sin protección de acceso, límites de uso y aislamiento de red.
+- **Sin autenticación ni cuotas.** La cola admite 20 análisis pendientes (`429 queue_full`), pero no hay límite de uso por cliente. No exponer en internet sin protección de acceso y aislamiento de red. El arranque rechaza `HOST` no loopback salvo `PINK_BRIDGE_ALLOW_REMOTE=1`.
+- **Proxy de salida sin autenticación.** Cualquier proceso local puede usarlo mientras hay un análisis en curso. El guardia SSRF sigue aplicando: solo alcanza destinos públicos.
+- **Tamaño de hallazgos.** No hay tope de nodos por incidencia; una página con miles de fallos produce payloads grandes.
+- **Evidencias.** La redacción se basa en nombres de atributo; `meta content=` y valores en URL quedan por revisar.
+- **Recorrido de sitio.** Acotado por `maxPages` y mismo origen. Cada página abre un navegador nuevo, así que un sitio grande tarda minutos. No sigue enlaces de otros dominios ni sitemaps.
+- **Formularios.** Solo se prueban los 3 primeros de cada página, con datos de prueba fijos. Las peticiones no-GET se interceptan; las GET pueden navegar dentro del mismo origen.
+- **Enlaces rotos.** Solo se detectan entre las páginas visitadas por el recorrido.
 - **Pruebas de CI.** El workflow de GitHub Actions no se ha ejecutado en GitHub; los mismos comandos sí se han ejecutado en local.
 
 ## Documentación

@@ -32,6 +32,8 @@ export function HomeView() {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [site, setSite] = useState(false);
+  const [maxPages, setMaxPages] = useState(5);
   const tokenRef = useRef<string>(crypto.randomUUID());
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +62,11 @@ export function HomeView() {
       inputRef.current?.focus();
       return;
     }
-    void launch({ url: url.trim(), submissionToken: tokenRef.current });
+    void launch({
+      url: url.trim(),
+      submissionToken: tokenRef.current,
+      ...(site ? { maxPages } : {}),
+    });
   }
 
   function onDemo(): void {
@@ -68,6 +74,13 @@ export function HomeView() {
       return;
     }
     void launch({ target: "demo", submissionToken: tokenRef.current });
+  }
+
+  function onDemoSite(): void {
+    if (submitting) {
+      return;
+    }
+    void launch({ target: "demo-site", maxPages, submissionToken: tokenRef.current });
   }
 
   return (
@@ -106,6 +119,39 @@ export function HomeView() {
             </p>
           )}
         </div>
+        <fieldset className="field">
+          <legend>Alcance</legend>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={site}
+              onChange={(event) => {
+                setSite(event.target.checked);
+              }}
+              disabled={submitting}
+            />{" "}
+            Recorrer el sitio (enlaces del mismo dominio, en móvil, tablet y escritorio)
+          </label>
+          {site && (
+            <label className="check">
+              Máximo de páginas{" "}
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={maxPages}
+                onChange={(event) => {
+                  setMaxPages(Math.min(10, Math.max(1, Number(event.target.value) || 1)));
+                }}
+                disabled={submitting}
+              />
+            </label>
+          )}
+          <p className="hint">
+            Solo recorre páginas del mismo dominio. Nunca envía formularios: los envíos se
+            interceptan.
+          </p>
+        </fieldset>
         <div className="actions">
           <button type="submit" disabled={submitting}>
             {submitting ? "Enviando…" : "Analizar"}
@@ -122,6 +168,9 @@ export function HomeView() {
       <div className="secondary-actions">
         <button type="button" className="secondary" onClick={onDemo} disabled={submitting}>
           Probar con la página de demostración
+        </button>
+        <button type="button" className="secondary" onClick={onDemoSite} disabled={submitting}>
+          Probar el recorrido de sitio
         </button>
         <a href={routeHref("history")}>Ver el histórico de análisis</a>
       </div>

@@ -12,6 +12,9 @@ export interface AnalysisRecord {
   readonly url: string;
   readonly normalizedUrl: string;
   readonly source: "url" | "demo";
+  /** "site" recorre varias páginas. Ausente en análisis anteriores: se trata como "page". */
+  readonly mode?: "page" | "site";
+  readonly maxPages?: number | null;
   readonly submissionToken: string;
   readonly createdAt: string;
   startedAt: string | null;

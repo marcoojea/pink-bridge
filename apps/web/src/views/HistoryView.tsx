@@ -76,7 +76,16 @@ export function HistoryView() {
         </p>
       )}
 
-      {items === null && error === null && <p role="status">Cargando el histórico…</p>}
+      {items === null && error === null && (
+        <>
+          <p role="status">Cargando el histórico…</p>
+          <ul className="history-list" aria-hidden="true">
+            {[0, 1, 2].map((row) => (
+              <li key={row} className="skeleton-row" />
+            ))}
+          </ul>
+        </>
+      )}
 
       {items !== null && items.length === 0 && (
         <div className="empty">

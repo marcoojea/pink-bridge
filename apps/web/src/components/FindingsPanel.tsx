@@ -9,6 +9,7 @@ export interface FindingFilters {
   readonly kind: FindingKind | "";
   readonly impact: Impact | "";
   readonly ruleId: string;
+  readonly viewport?: "mobile" | "tablet" | "desktop" | "";
 }
 
 export const NO_FILTERS: FindingFilters = { kind: "", impact: "", ruleId: "" };
@@ -19,7 +20,8 @@ export function filterFindings(findings: readonly Finding[], filters: FindingFil
     (finding) =>
       (filters.kind === "" || finding.kind === filters.kind) &&
       (filters.impact === "" || finding.impact === filters.impact) &&
-      (filters.ruleId === "" || finding.ruleId === filters.ruleId),
+      (filters.ruleId === "" || finding.ruleId === filters.ruleId) &&
+      (!filters.viewport || finding.viewport === filters.viewport),
   );
 }
 
@@ -81,6 +83,11 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
       <section className="card">
         <h2>Incidencias</h2>
         <p role="status">Cargando las incidencias…</p>
+        <ul className="finding-list" aria-hidden="true">
+          {[0, 1, 2].map((row) => (
+            <li key={row} className="skeleton-row" />
+          ))}
+        </ul>
       </section>
     );
   }
@@ -183,6 +190,11 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
                       <span className="badge badge-kind">{KIND_LABELS[finding.kind]}</span>
                     </p>
                     <p>{finding.description}</p>
+                    {finding.pageUrl !== undefined && (
+                      <p className="hint">
+                        {finding.pageUrl} · {finding.viewport ?? "escritorio"}
+                      </p>
+                    )}
                     <p className="hint">
                       {finding.affectedNodeCount}{" "}
                       {finding.affectedNodeCount === 1 ? "elemento" : "elementos"}

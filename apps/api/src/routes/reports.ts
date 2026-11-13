@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createApiError } from "@pink-bridge/shared";
 import type { AnalysisService } from "../analysis/service.js";
 import { ServiceError } from "../analysis/service.js";
+import { buildAgentPrompts } from "../reports/agentPrompts.js";
 import { buildReport, renderReportHtml, renderReportJson } from "../reports/report.js";
 
 const paramsSchema = z.object({ id: z.uuid() }).strict();
@@ -47,6 +48,32 @@ export function registerReportRoutes(app: FastifyInstance, service: AnalysisServ
         .header("content-type", "application/json; charset=utf-8")
         .header("content-disposition", `attachment; filename="${filename}"`)
         .send(renderReportJson(model));
+    } catch (error) {
+      if (error instanceof ServiceError) {
+        return reply.code(error.status).send(createApiError(error.code, error.message));
+      }
+      throw error;
+    }
+  });
+
+  app.get("/api/analyses/:id/agent-prompts", async (request, reply) => {
+    const params = paramsSchema.safeParse(request.params);
+    if (!params.success) {
+      return reply.code(404).send(createApiError("not_found", "Análisis no encontrado."));
+    }
+    try {
+      const data = await service.reportData(params.data.id);
+      if (!data) {
+        return await reply.code(404).send(createApiError("not_found", "Análisis no encontrado."));
+      }
+      const markdown = buildAgentPrompts(data.analysis, data.findings, data.reviews);
+      return await reply
+        .header("content-type", "text/markdown; charset=utf-8")
+        .header(
+          "content-disposition",
+          `attachment; filename="pink-bridge-${params.data.id}-agente.md"`,
+        )
+        .send(markdown);
     } catch (error) {
       if (error instanceof ServiceError) {
         return reply.code(error.status).send(createApiError(error.code, error.message));

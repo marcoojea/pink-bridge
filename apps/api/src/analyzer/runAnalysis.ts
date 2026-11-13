@@ -1,8 +1,18 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { extname, resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, type Browser, type Page, type Request, type Route } from "playwright";
 import type { AnalysisErrorCode, AnalysisStage } from "@pink-bridge/shared";
 import { BLOCKED_HEADER, startEgressProxy, type EgressEvents } from "./egressProxy.js";
+import {
+  collectLinks,
+  observe,
+  probeForms,
+  type FormProbe,
+  type MutationGuard,
+  type PageObservations,
+} from "./probes.js";
 import type { RawAxeResults } from "./normalize.js";
 import { normalizeHostname, systemResolver, type Resolver } from "./ssrf.js";
 import { DEFAULT_ALLOWED_PORTS } from "./urlPolicy.js";
@@ -21,6 +31,7 @@ export class AnalysisRunError extends Error {
   constructor(
     readonly code: AnalysisErrorCode,
     message: string,
+    readonly httpStatus?: number,
   ) {
     super(message);
     this.name = "AnalysisRunError";
@@ -29,7 +40,12 @@ export class AnalysisRunError extends Error {
 
 export type RunSource =
   | { readonly kind: "url"; readonly url: URL }
-  | { readonly kind: "demo"; readonly fixturePath: string };
+  | {
+      readonly kind: "demo";
+      readonly fixturePath: string;
+      /** Carpeta de un sitio de demostración: cada ruta se sirve desde aquí. */
+      readonly siteRoot?: string;
+    };
 
 export interface RunOptions {
   readonly source: RunSource;
@@ -42,6 +58,12 @@ export interface RunOptions {
    * un servidor local. No se expone desde la API ni desde la configuración.
    */
   readonly testOnlyTrustedHosts?: readonly string[];
+  /** Tamaño de ventana. Por defecto, escritorio 1280×800. */
+  readonly viewport?: { readonly width: number; readonly height: number };
+  /** Ejecuta sondas: enlaces, formularios (con mutaciones interceptadas). */
+  readonly probe?: boolean;
+  /** Ruta inicial dentro del origen de demostración (por defecto "/"). */
+  readonly startPath?: string;
 }
 
 export interface RunResult {
@@ -50,6 +72,11 @@ export interface RunResult {
   readonly durationMs: number;
   /** Hosts de peticiones bloqueadas por la política de red o no resueltos (informativo). */
   readonly blockedHosts: readonly string[];
+  readonly observations: PageObservations;
+  /** Enlaces de la página (solo con probe). */
+  readonly links: readonly string[];
+  /** Sondas de formularios (solo con probe). */
+  readonly forms: readonly FormProbe[];
 }
 
 interface RunContext {
@@ -58,9 +85,25 @@ interface RunContext {
   timedOut: boolean;
 }
 
+const DEMO_MIME: Readonly<Record<string, string>> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+};
+
 const HTML_CONTENT_TYPE = /text\/html|application\/xhtml\+xml/i;
 
-async function routeRequest(route: Route, request: Request, source: RunSource): Promise<void> {
+async function routeRequest(
+  route: Route,
+  request: Request,
+  source: RunSource,
+  guard: MutationGuard,
+): Promise<void> {
   let target: URL;
   try {
     target = new URL(request.url());
@@ -69,13 +112,25 @@ async function routeRequest(route: Route, request: Request, source: RunSource): 
     return;
   }
 
+  if (guard.active && request.method() !== "GET") {
+    guard.intercepted += 1;
+    await route.fulfill({ status: 204, body: "" });
+    return;
+  }
+
   if (source.kind === "demo" && target.origin === DEMO_ORIGIN) {
-    if (target.pathname !== "/") {
-      await route.fulfill({ status: 404, contentType: "text/plain; charset=utf-8", body: "" });
+    const file = demoFile(source, target.pathname);
+    if (file === null) {
+      await route.fulfill({
+        status: 404,
+        contentType: "text/html; charset=utf-8",
+        body: "<!doctype html><title>404</title>",
+      });
       return;
     }
-    const body = await readFile(source.fixturePath);
-    await route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body });
+    const body = await readFile(file);
+    const contentType = DEMO_MIME[extname(file).toLowerCase()] ?? "text/html; charset=utf-8";
+    await route.fulfill({ status: 200, contentType, body });
     return;
   }
 
@@ -86,6 +141,19 @@ async function routeRequest(route: Route, request: Request, source: RunSource): 
 
   // El resto de peticiones sale por el proxy de salida, que valida cada conexión.
   await route.continue();
+}
+
+/** Resuelve la ruta del demo a un fichero, sin salir de la carpeta del sitio. */
+function demoFile(
+  source: { fixturePath: string; siteRoot?: string },
+  pathname: string,
+): string | null {
+  if (source.siteRoot === undefined) {
+    return pathname === "/" ? source.fixturePath : null;
+  }
+  const relative = pathname.endsWith("/") ? `${pathname}index.html` : pathname;
+  const file = resolve(source.siteRoot, `.${decodeURIComponent(relative)}`);
+  return file.startsWith(`${resolve(source.siteRoot)}/`) && existsSync(file) ? file : null;
 }
 
 function mapError(
@@ -215,17 +283,21 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
       acceptDownloads: false,
       permissions: [],
       ignoreHTTPSErrors: false,
-      viewport: { width: 1280, height: 800 },
+      viewport: options.viewport ?? { width: 1280, height: 800 },
       locale: "es-ES",
     });
 
+    const guard: MutationGuard = { active: false, intercepted: 0 };
     await browserContext.route("**/*", (route, request) => {
-      routeRequest(route, request, options.source).catch(() => route.abort("failed"));
+      routeRequest(route, request, options.source, guard).catch(() => route.abort("failed"));
     });
 
     const page: Page = await browserContext.newPage();
     const startUrl =
-      options.source.kind === "url" ? options.source.url.toString() : `${DEMO_ORIGIN}/`;
+      options.source.kind === "url"
+        ? options.source.url.toString()
+        : `${DEMO_ORIGIN}${options.startPath ?? "/"}`;
+    const observer = observe(page, startUrl.startsWith("https:"));
 
     options.onStage?.("navigating");
     let response;
@@ -249,6 +321,7 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
       throw new AnalysisRunError(
         "http_error",
         `La página respondió con el estado HTTP ${String(response.status())}.`,
+        response.status(),
       );
     }
     const contentType = response.headers()["content-type"] ?? "";
@@ -264,13 +337,25 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
       throw mapError(error, context, "checks");
     }
 
+    const observations = observer.snapshot();
+    const finalUrl = page.url();
+    let links: string[] = [];
+    let forms: FormProbe[] = [];
+    if (options.probe) {
+      links = await collectLinks(page).catch(() => []);
+      forms = await probeForms(page, startUrl, guard, limits.navigationMs).catch(() => []);
+    }
+
     return {
       raw,
-      finalUrl: page.url(),
+      finalUrl,
       durationMs: Date.now() - startedAt,
       blockedHosts: [
         ...new Set([...proxy.events.blockedHosts, ...proxy.events.dnsFailedHosts]),
       ].slice(0, 50),
+      observations,
+      links,
+      forms,
     };
   } catch (error) {
     throw mapError(error, context, "browser");

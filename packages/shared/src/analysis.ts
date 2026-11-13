@@ -65,6 +65,7 @@ export const analysisSummarySchema = z
     needsReview: z.number().int().nonnegative(),
     passedRules: z.number().int().nonnegative(),
     byImpact: impactCountsSchema,
+    pagesAnalyzed: z.number().int().nonnegative().optional(),
   })
   .strict();
 export type AnalysisSummary = z.infer<typeof analysisSummarySchema>;
@@ -75,6 +76,8 @@ export const analysisSchema = z
     url: z.string().min(1),
     normalizedUrl: z.string().min(1),
     source: z.enum(["url", "demo"]),
+    mode: z.enum(["page", "site"]).optional(),
+    maxPages: z.number().int().nullable().optional(),
     createdAt: z.iso.datetime(),
     startedAt: z.iso.datetime().nullable(),
     finishedAt: z.iso.datetime().nullable(),
@@ -117,11 +120,18 @@ export const affectedNodeSchema = z
   .strict();
 export type AffectedNode = z.infer<typeof affectedNodeSchema>;
 
+export const VIEWPORT_NAMES = ["mobile", "tablet", "desktop"] as const;
+export const viewportNameSchema = z.enum(VIEWPORT_NAMES);
+export type ViewportName = z.infer<typeof viewportNameSchema>;
+
 export const findingSchema = z
   .object({
     id: z.string().min(1),
     analysisId: z.uuid(),
     kind: findingKindSchema,
+    /** Página y tamaño donde aparece. Ausentes en análisis anteriores al modo sitio. */
+    pageUrl: z.string().optional(),
+    viewport: viewportNameSchema.optional(),
     ruleId: z.string().min(1),
     description: z.string(),
     help: z.string(),

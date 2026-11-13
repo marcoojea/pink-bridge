@@ -12,6 +12,8 @@ import type {
 } from "@pink-bridge/shared";
 import { compareAnalyses } from "./compare.js";
 import { normalizeAxeResults } from "../analyzer/normalize.js";
+import { pageErrorFinding, qaFindings } from "../analyzer/qa.js";
+import { runSite, type PageOutcome } from "../analyzer/site.js";
 import {
   AnalysisRunError,
   DEMO_ORIGIN,
@@ -42,6 +44,8 @@ export interface AnalysisServiceOptions {
   readonly store: AnalysisStore;
   /** Fixture de demostración. Solo se habilita en desarrollo y pruebas. */
   readonly demoFixturePath?: string | undefined;
+  /** Carpeta del sitio de demostración multipágina. */
+  readonly demoSiteRoot?: string | undefined;
   readonly runner?: (options: RunOptions) => Promise<RunResult>;
   readonly runLimits?: RunOptions["limits"];
   readonly allowedPorts?: readonly number[];
@@ -62,6 +66,8 @@ export function toPublicAnalysis(record: AnalysisRecord): Analysis {
     url: record.url,
     normalizedUrl: record.normalizedUrl,
     source: record.source,
+    mode: record.mode ?? "page",
+    maxPages: record.maxPages ?? null,
     createdAt: record.createdAt,
     startedAt: record.startedAt,
     finishedAt: record.finishedAt,
@@ -74,6 +80,8 @@ export function toPublicAnalysis(record: AnalysisRecord): Analysis {
     errorMessage: record.errorMessage,
   };
 }
+
+const DEFAULT_MAX_PAGES = 5;
 
 const SAFE_MESSAGES: Readonly<Record<AnalysisErrorCode, string>> = {
   invalid_url: "La URL no es válida.",
@@ -104,6 +112,7 @@ const SAFE_MESSAGES: Readonly<Record<AnalysisErrorCode, string>> = {
 export class AnalysisService {
   private readonly store: AnalysisStore;
   private readonly demoFixturePath: string | undefined;
+  private readonly demoSiteRoot: string | undefined;
   private readonly runner: (options: RunOptions) => Promise<RunResult>;
   private readonly runLimits: RunOptions["limits"];
   private readonly allowedPorts: readonly number[] | undefined;
@@ -118,6 +127,7 @@ export class AnalysisService {
   constructor(options: AnalysisServiceOptions) {
     this.store = options.store;
     this.demoFixturePath = options.demoFixturePath;
+    this.demoSiteRoot = options.demoSiteRoot;
     this.runner = options.runner ?? runAnalysis;
     this.runLimits = options.runLimits;
     this.allowedPorts = options.allowedPorts;
@@ -149,6 +159,8 @@ export class AnalysisService {
       url: source.url,
       normalizedUrl: source.normalizedUrl,
       source: source.kind,
+      mode: source.mode,
+      maxPages: source.maxPages,
       submissionToken: request.submissionToken,
       createdAt: this.now().toISOString(),
       startedAt: null,
@@ -303,10 +315,29 @@ export class AnalysisService {
 
   private resolveSource(request: CreateAnalysisRequest): {
     kind: "url" | "demo";
+    mode: "page" | "site";
+    maxPages: number | null;
     url: string;
     normalizedUrl: string;
     runSource: RunSource;
   } {
+    if (request.target === "demo-site") {
+      if (this.demoSiteRoot === undefined) {
+        throw new ServiceError(
+          404,
+          "not_found",
+          "La demostración no está disponible en este entorno.",
+        );
+      }
+      return {
+        kind: "demo",
+        mode: "site",
+        maxPages: request.maxPages ?? DEFAULT_MAX_PAGES,
+        url: `${DEMO_ORIGIN}/`,
+        normalizedUrl: `${DEMO_ORIGIN}/`,
+        runSource: { kind: "demo", fixturePath: this.demoSiteRoot, siteRoot: this.demoSiteRoot },
+      };
+    }
     if (request.target === "demo") {
       if (this.demoFixturePath === undefined) {
         throw new ServiceError(
@@ -317,6 +348,8 @@ export class AnalysisService {
       }
       return {
         kind: "demo",
+        mode: "page",
+        maxPages: null,
         url: `${DEMO_ORIGIN}/`,
         normalizedUrl: `${DEMO_ORIGIN}/`,
         runSource: { kind: "demo", fixturePath: this.demoFixturePath },
@@ -326,6 +359,8 @@ export class AnalysisService {
     const target = normalizeTargetUrl(request.url ?? "", this.allowedPorts);
     return {
       kind: "url",
+      mode: request.maxPages !== undefined ? "site" : "page",
+      maxPages: request.maxPages ?? null,
       url: target.normalized,
       normalizedUrl: target.normalized,
       runSource: { kind: "url", url: target.url },
@@ -366,6 +401,11 @@ export class AnalysisService {
       stage: "validating",
     });
 
+    if (record.mode === "site") {
+      await this.executeSite(id, record, startedAt);
+      return;
+    }
+
     const source: RunSource =
       record.source === "demo" && this.demoFixturePath !== undefined
         ? { kind: "demo", fixturePath: this.demoFixturePath }
@@ -402,6 +442,96 @@ export class AnalysisService {
         durationMs: finishedAt.getTime() - startedAt.getTime(),
         axeVersion: normalized.axeVersion,
         summary: normalized.summary,
+        errorCode: null,
+        errorMessage: null,
+      });
+    } catch (error) {
+      await this.fail(id, startedAt, error);
+    }
+  }
+
+  /** Recorre varias páginas en tres viewports y consolida incidencias, QA y resumen. */
+  private async executeSite(id: string, record: AnalysisRecord, startedAt: Date): Promise<void> {
+    try {
+      await this.store.updateAnalysis(id, { stage: "navigating" });
+      const common = {
+        maxPages: record.maxPages ?? DEFAULT_MAX_PAGES,
+        viewports: ["desktop", "tablet", "mobile"] as const,
+        ...(this.allowedPorts !== undefined ? { allowedPorts: this.allowedPorts } : {}),
+        ...(this.runLimits !== undefined ? { limits: this.runLimits } : {}),
+      };
+      const site =
+        record.source === "demo"
+          ? await runSite({ ...common, demoSiteRoot: this.demoSiteRoot ?? "" })
+          : await runSite({ ...common, startUrl: record.normalizedUrl });
+
+      await this.store.updateAnalysis(id, { stage: "processing_results" });
+      const detectedAt = this.now().toISOString();
+      const findings: Finding[] = [];
+      let axeVersion: string | null = null;
+      let passedRules = 0;
+
+      site.pages.forEach((page: PageOutcome, index: number) => {
+        const ctx = {
+          analysisId: id,
+          detectedAt,
+          pageUrl: page.url,
+          viewport: page.viewport,
+          scope: `p${String(index)}:${page.viewport}`,
+        };
+        if (!page.ok) {
+          findings.push(pageErrorFinding(ctx, page.code, page.message, page.httpStatus));
+          return;
+        }
+        axeVersion ??= page.run.raw.testEngine.version;
+        passedRules += page.run.raw.passes.length;
+        findings.push(...normalizeAxeResults(page.run.raw, ctx).findings);
+        findings.push(
+          ...qaFindings(
+            {
+              observations: page.run.observations,
+              forms: page.run.forms,
+              brokenLinks:
+                page.viewport === "desktop" ? (site.brokenLinks.get(page.url) ?? []) : [],
+            },
+            ctx,
+          ),
+        );
+      });
+
+      if (!site.pages.some((page) => page.ok)) {
+        const failure = site.pages.find((page) => !page.ok);
+        throw new AnalysisRunError(
+          failure?.ok === false ? failure.code : "navigation_failed",
+          failure?.ok === false ? failure.message : "No se pudo cargar ninguna página.",
+          failure?.ok === false ? failure.httpStatus : undefined,
+        );
+      }
+
+      await this.store.updateAnalysis(id, { stage: "saving_report" });
+      await this.store.insertFindings(id, findings);
+
+      const automatic = findings.filter((finding) => finding.kind === "automatic");
+      const byImpact = { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 };
+      for (const finding of automatic) {
+        byImpact[finding.impact] += 1;
+      }
+      const finishedAt = this.now();
+      await this.store.updateAnalysis(id, {
+        status: "completed",
+        stage: "completed",
+        finishedAt: finishedAt.toISOString(),
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        axeVersion,
+        summary: {
+          automaticRules: new Set(automatic.map((finding) => finding.ruleId)).size,
+          automaticFindings: automatic.length,
+          affectedNodes: automatic.reduce((total, finding) => total + finding.affectedNodeCount, 0),
+          needsReview: findings.length - automatic.length,
+          passedRules,
+          byImpact,
+          pagesAnalyzed: site.pagesVisited,
+        },
         errorCode: null,
         errorMessage: null,
       });

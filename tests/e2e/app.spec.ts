@@ -4,6 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function expectNoAxeViolations(page: Page): Promise<void> {
+  // Auditar en reposo: una animación de entrada en curso mezcla colores y falsea el contraste.
+  await page.waitForFunction("document.getAnimations().every((a) => a.playState !== 'running')");
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
   expect(results.violations).toEqual([]);
 }
@@ -226,4 +228,19 @@ test("el formulario de revisión se recorre completo con teclado", async ({ page
   await expect(detail.getByRole("button", { name: "Guardar revisión" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(detail.getByRole("status")).toHaveText("Revisión guardada.");
+});
+
+test("el recorrido de sitio muestra el resumen con páginas auditadas", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.goto("/#/");
+  await page.getByRole("button", { name: "Probar el recorrido de sitio" }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Resultados del análisis" }),
+  ).toBeVisible({
+    timeout: 220_000,
+  });
+  await expect(page.getByText("Incidencias automáticas", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Prompt para Claude Code o Codex (Markdown)" }),
+  ).toBeVisible();
 });

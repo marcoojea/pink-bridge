@@ -5,6 +5,8 @@
   --color-muted: #4f4152;
   --color-accent: #7a1650;
   --color-focus: #1f5fbf;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --color-surface: #ffffff;
   --color-border: #d8cdd6;
   --color-danger-bg: #fdecef;
@@ -78,30 +80,37 @@ body {
   box-sizing: border-box;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+}
+
 h1 {
   color: var(--color-accent);
   font-size: clamp(1.6rem, 4vw, 2.25rem);
   line-height: 1.2;
-  margin: 0 0 0.5rem;
+  margin: 0 0 8px;
 }
 
 h2 {
   font-size: 1.35rem;
-  margin: 0 0 0.5rem;
+  margin: 0 0 8px;
 }
 
 h3 {
   font-size: 1.1rem;
-  margin: 0.5rem 0 0.25rem;
+  margin: 8px 0 4px;
 }
 
 h4 {
   font-size: 1rem;
-  margin: 0.75rem 0 0.25rem;
+  margin: 12px 0 4px;
 }
 
 p {
-  margin: 0.4rem 0;
+  margin: 8px 0;
 }
 
 a {
@@ -119,7 +128,7 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
   background: var(--color-notice-bg);
-  padding: 0.5rem;
+  padding: 8px;
   border-radius: 0.4rem;
   overflow-x: auto;
 }
@@ -138,9 +147,9 @@ section:focus {
 
 .skip-link {
   position: absolute;
-  left: 1rem;
-  top: -4rem;
-  padding: 0.6rem 1rem;
+  left: 16px;
+  top: -64px;
+  padding: 8px 16px;
   background: var(--color-surface);
   color: var(--color-text);
   border: 2px solid var(--color-focus);
@@ -149,7 +158,7 @@ section:focus {
 }
 
 .skip-link:focus {
-  top: 1rem;
+  top: 16px;
 }
 
 .site-header {
@@ -157,14 +166,14 @@ section:focus {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
+  gap: 8px 16px;
   max-width: 56rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .brand {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-accent);
   margin: 0;
   font-size: 1.1rem;
@@ -173,37 +182,37 @@ section:focus {
 .nav-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
+  gap: 12px 20px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .nav-list a[aria-current="page"] {
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: underline;
 }
 
 main {
   max-width: 56rem;
   margin: 0 auto;
-  padding: 0.5rem 1rem 3rem;
+  padding: 8px 16px 48px;
 }
 
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: 16px 20px;
+  margin-bottom: 16px;
 }
 
 .stack > * + * {
-  margin-top: 0.9rem;
+  margin-top: 16px;
 }
 
 .stack-lg > * + * {
-  margin-top: 1.25rem;
+  margin-top: 20px;
 }
 
 .field label {
@@ -216,8 +225,8 @@ main {
   display: block;
   width: 100%;
   max-width: 36rem;
-  margin-top: 0.3rem;
-  padding: 0.6rem 0.75rem;
+  margin-top: 4px;
+  padding: 8px 12px;
   font: inherit;
   color: var(--color-text);
   background: var(--color-bg);
@@ -243,7 +252,7 @@ button,
 .button-link {
   font: inherit;
   font-weight: 600;
-  padding: 0.6rem 1.1rem;
+  padding: 8px 16px;
   border-radius: 0.4rem;
   border: 2px solid var(--color-accent);
   background: var(--color-accent);
@@ -269,17 +278,17 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem 1rem;
+  gap: 8px 16px;
 }
 
 .secondary-actions {
-  margin-top: 1.25rem;
+  margin-top: 20px;
 }
 
 .notice {
   background: var(--color-notice-bg);
   border-radius: 0.5rem;
-  padding: 0.7rem 0.9rem;
+  padding: 12px 16px;
 }
 
 .notice-error {
@@ -291,8 +300,8 @@ button:disabled {
 .meta {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.6rem 1rem;
-  margin: 0.5rem 0 0.75rem;
+  gap: 8px 16px;
+  margin: 8px 0 12px;
 }
 
 .meta dt,
@@ -311,14 +320,14 @@ button:disabled {
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 0.75rem;
-  margin: 0.5rem 0;
+  gap: 12px;
+  margin: 8px 0;
 }
 
 .summary-grid > div {
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
-  padding: 0.6rem 0.8rem;
+  padding: 8px 12px;
 }
 
 .summary-grid dd {
@@ -330,15 +339,15 @@ button:disabled {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 8px 16px;
 }
 
 .badge {
   display: inline-block;
-  padding: 0.15rem 0.55rem;
+  padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   background: var(--color-notice-bg);
   color: var(--color-text);
   border: 1px solid var(--color-border);
@@ -377,13 +386,13 @@ button:disabled {
 .stages {
   list-style: none;
   padding: 0;
-  margin: 0.75rem 0 0;
+  margin: 12px 0 0;
   display: grid;
-  gap: 0.4rem;
+  gap: 8px;
 }
 
 .stages li {
-  padding: 0.45rem 0.7rem;
+  padding: 8px 12px;
   border-left: 4px solid var(--color-border);
   color: var(--color-muted);
 }
@@ -395,36 +404,36 @@ button:disabled {
 .stages li[data-state="en curso"] {
   border-color: var(--color-accent);
   color: var(--color-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .progress-label {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.05rem;
 }
 
 .filters {
   border: 1px solid var(--color-border);
   border-radius: 0.6rem;
-  padding: 0.75rem 1rem 1rem;
+  padding: 12px 16px 16px;
   margin: 0;
 }
 
 .filters legend {
-  font-weight: 700;
-  padding: 0 0.3rem;
+  font-weight: 600;
+  padding: 0 4px;
 }
 
 .filter-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.75rem;
+  gap: 12px;
 }
 
 .empty {
   border: 1px dashed var(--color-border);
   border-radius: 0.6rem;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .finding-list,
@@ -434,7 +443,7 @@ button:disabled {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
 .finding-item,
@@ -443,10 +452,10 @@ button:disabled {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 12px;
   border: 1px solid var(--color-border);
   border-radius: 0.6rem;
-  padding: 0.8rem 1rem;
+  padding: 12px 16px;
 }
 
 .finding-item > div,
@@ -458,7 +467,7 @@ button:disabled {
 
 .detail {
   border-top: 3px solid var(--color-accent);
-  padding-top: 0.75rem;
+  padding-top: 12px;
 }
 
 .history-item a {
@@ -481,13 +490,101 @@ button:disabled {
   border: 0;
 }
 
+/* Movimiento: solo transform y opacity. Sin movimiento, las transiciones de opacidad se mantienen. */
+button {
+  transition: transform 160ms var(--ease-out);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.view-enter {
+  animation: view-enter 200ms var(--ease-out) both;
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.notice,
+.field-error,
+.progress-label {
+  animation: notice-enter 200ms var(--ease-out) both;
+}
+
+@keyframes notice-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stages li {
+  transition:
+    color 200ms var(--ease-out),
+    border-color 200ms var(--ease-out);
+}
+
+.summary-grid > div {
+  animation: summary-enter 240ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+@keyframes summary-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail {
+  animation: view-enter 120ms var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
     scroll-behavior: auto !important;
+  }
+  .notice,
+  .field-error,
+  .progress-label,
+  .summary-grid > div,
+  .view-enter,
+  .detail {
+    animation-name: view-enter !important;
+    animation-duration: 120ms !important;
+    animation-delay: 0ms !important;
+  }
+  .notice,
+  .field-error,
+  .progress-label {
+    animation-name: view-enter !important;
+  }
+  .summary-grid > div {
+    animation-name: view-enter !important;
+  }
+  button,
+  .stages li {
+    transition: none !important;
+  }
+  button:active:not(:disabled) {
+    transform: none;
   }
 }
 
@@ -513,7 +610,7 @@ a.button-link {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
-  padding: 0.6rem 1.1rem;
+  padding: 8px 16px;
   border-radius: 0.4rem;
   text-decoration: none;
   font-weight: 600;
@@ -528,17 +625,67 @@ a.secondary-link {
 .comparison-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.75rem;
+  gap: 12px;
 }
 
 .comparison-summary > div {
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
-  padding: 0.6rem 0.8rem;
+  padding: 8px 12px;
 }
 
 .comparison-summary dd {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
+}
+
+/* Estado de carga: bloques con la forma del contenido, sin movimiento. */
+.skeleton-row {
+  height: 64px;
+  border-radius: 10px;
+  background: var(--color-border);
+  opacity: 0.5;
+  border: none;
+  padding: 0;
+}
+
+/* Progreso por etapas: el marcador se rellena al completarse la etapa. */
+.stages li {
+  position: relative;
+  padding-left: 32px;
+}
+
+.stages li::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--color-muted);
+  background: transparent;
+}
+
+.stages li[data-state="hecho"]::before {
+  background: var(--color-muted);
+}
+
+.stages li[data-state="en curso"]::before {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stages li::before {
+    transition: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    opacity: 0.92;
+  }
 }

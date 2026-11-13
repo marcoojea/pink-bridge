@@ -19,6 +19,8 @@ function record(overrides: Partial<AnalysisRecord> = {}): AnalysisRecord {
     url: "https://ejemplo.com/",
     normalizedUrl: "https://ejemplo.com/",
     source: "url",
+    mode: "page",
+    maxPages: null,
     submissionToken: randomUUID(),
     createdAt: "2026-11-12T10:00:00.000Z",
     startedAt: null,
@@ -234,7 +236,7 @@ describe("migraciones", () => {
     try {
       expect(migrate(db)).toEqual([]);
       const rows = db.prepare("SELECT version FROM schema_migrations").all();
-      expect(rows).toHaveLength(2);
+      expect(rows).toHaveLength(3);
     } finally {
       db.close();
     }

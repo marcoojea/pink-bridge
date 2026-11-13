@@ -39,6 +39,11 @@ export interface RawAxeResults {
 export interface NormalizeContext {
   readonly analysisId: string;
   readonly detectedAt: string;
+  /** Página y tamaño de la pasada (modo sitio). Sin ellos, la pasada es una única página. */
+  readonly pageUrl?: string;
+  readonly viewport?: "mobile" | "tablet" | "desktop";
+  /** Sufijo que distingue las incidencias de cada pasada (página y viewport). */
+  readonly scope?: string;
 }
 
 export interface NormalizedResults {
@@ -121,7 +126,7 @@ function buildFinding(
     return null;
   }
 
-  const findingId = `${context.analysisId}:${kind}:${rule.id}`;
+  const findingId = `${context.analysisId}:${kind}:${rule.id}${context.scope ? `:${context.scope}` : ""}`;
   const { nodes, keys } = buildNodes(rule, findingId);
   const explanation = explainRule(rule.id, rule.help);
   const looseKeys = rule.nodes.map((node) => {
@@ -132,6 +137,8 @@ function buildFinding(
   return {
     id: findingId,
     analysisId: context.analysisId,
+    pageUrl: context.pageUrl,
+    viewport: context.viewport,
     kind,
     ruleId: rule.id,
     description: explanation.explanation,

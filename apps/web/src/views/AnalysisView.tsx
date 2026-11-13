@@ -134,6 +134,13 @@ export function AnalysisView({ id }: { readonly id: string }) {
           >
             Descargar informe HTML
           </a>
+          <a
+            className="button-link secondary-link"
+            href={`/api/analyses/${analysis.id}/agent-prompts`}
+            download
+          >
+            Prompt para Claude Code o Codex (Markdown)
+          </a>
         </nav>
       </div>
       {analysis.summary !== null && <SummaryCards summary={analysis.summary} />}

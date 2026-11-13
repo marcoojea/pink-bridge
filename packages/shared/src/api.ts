@@ -6,7 +6,8 @@ export const MAX_URL_LENGTH = 2048;
 export const createAnalysisRequestSchema = z
   .object({
     url: z.string().min(1).max(MAX_URL_LENGTH).optional(),
-    target: z.literal("demo").optional(),
+    target: z.enum(["demo", "demo-site"]).optional(),
+    maxPages: z.number().int().min(1).max(10).optional(),
     submissionToken: z.uuid(),
   })
   .strict()

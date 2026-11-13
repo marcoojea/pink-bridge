@@ -82,6 +82,14 @@ const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 3,
+    name: "modo_sitio",
+    sql: `
+      ALTER TABLE analyses ADD COLUMN mode TEXT NOT NULL DEFAULT 'page' CHECK (mode IN ('page', 'site'));
+      ALTER TABLE analyses ADD COLUMN max_pages INTEGER;
+    `,
+  },
 ];
 
 /** Aplica las migraciones pendientes. Devuelve las versiones aplicadas en esta llamada. */
@@ -131,6 +139,8 @@ interface AnalysisRow {
   url: string;
   normalized_url: string;
   source: "url" | "demo";
+  mode: "page" | "site";
+  max_pages: number | null;
   submission_token: string;
   created_at: string;
   started_at: string | null;
@@ -150,6 +160,8 @@ function toRecord(row: AnalysisRow): AnalysisRecord {
     url: row.url,
     normalizedUrl: row.normalized_url,
     source: row.source,
+    mode: row.mode,
+    maxPages: row.max_pages,
     submissionToken: row.submission_token,
     createdAt: row.created_at,
     startedAt: row.started_at,
@@ -208,10 +220,10 @@ export class SqliteAnalysisStore implements AnalysisStore {
 
   constructor(private readonly db: Db) {
     this.insertAnalysisStmt = db.prepare(`
-      INSERT INTO analyses (id, url, normalized_url, source, submission_token, created_at, started_at, finished_at,
-        duration_ms, status, stage, axe_version, summary_json, error_code, error_message)
-      VALUES (@id, @url, @normalized_url, @source, @submission_token, @created_at, @started_at, @finished_at,
-        @duration_ms, @status, @stage, @axe_version, @summary_json, @error_code, @error_message)
+      INSERT INTO analyses (id, url, normalized_url, source, mode, max_pages, submission_token, created_at, started_at,
+        finished_at, duration_ms, status, stage, axe_version, summary_json, error_code, error_message)
+      VALUES (@id, @url, @normalized_url, @source, @mode, @max_pages, @submission_token, @created_at, @started_at,
+        @finished_at, @duration_ms, @status, @stage, @axe_version, @summary_json, @error_code, @error_message)
     `);
     this.getAnalysisStmt = db.prepare("SELECT * FROM analyses WHERE id = ?");
     this.findTokenStmt = db.prepare("SELECT * FROM analyses WHERE submission_token = ?");
@@ -234,6 +246,8 @@ export class SqliteAnalysisStore implements AnalysisStore {
       url: record.url,
       normalized_url: record.normalizedUrl,
       source: record.source,
+      mode: record.mode ?? "page",
+      max_pages: record.maxPages ?? null,
       submission_token: record.submissionToken,
       created_at: record.createdAt,
       started_at: record.startedAt,

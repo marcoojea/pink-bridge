@@ -304,3 +304,51 @@ describe("Navegación", () => {
     ).toBeTruthy();
   });
 });
+
+describe("Inicio: recorrido de sitio", () => {
+  it("envía maxPages solo cuando el recorrido de sitio está activado", async () => {
+    const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ id: ANALYSIS_ID }) }));
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText("Dirección web"), {
+      target: { value: "https://ejemplo.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    await waitFor(() => {
+      expect(mock).toHaveBeenCalledTimes(1);
+    });
+    expect(JSON.parse(requestBody(mock.mock.calls[0])) as object).not.toHaveProperty("maxPages");
+  });
+
+  it("con el recorrido activo envía el número de páginas acotado entre 1 y 10", async () => {
+    const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ id: ANALYSIS_ID }) }));
+    render(<App />);
+
+    fireEvent.click(screen.getByLabelText(/Recorrer el sitio/));
+    const pages = screen.getByLabelText<HTMLInputElement>(/Máximo de páginas/);
+    fireEvent.change(pages, { target: { value: "99" } });
+    expect(pages.value).toBe("10");
+    fireEvent.change(pages, { target: { value: "0" } });
+    expect(pages.value).toBe("1");
+
+    fireEvent.change(pages, { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText("Dirección web"), {
+      target: { value: "https://ejemplo.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    await waitFor(() => {
+      expect(mock).toHaveBeenCalledTimes(1);
+    });
+    expect(JSON.parse(requestBody(mock.mock.calls[0]))).toMatchObject({ maxPages: 4 });
+  });
+
+  it("lanza el recorrido del demo de sitio con target demo-site", async () => {
+    const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ source: "demo" }) }));
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Probar el recorrido de sitio" }));
+    await waitFor(() => {
+      expect(mock).toHaveBeenCalledTimes(1);
+    });
+    expect(JSON.parse(requestBody(mock.mock.calls[0]))).toMatchObject({ target: "demo-site" });
+  });
+});

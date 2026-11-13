@@ -31,10 +31,12 @@ const demoFixturePath = fileURLToPath(
 );
 const demoAvailable = demoRequested && existsSync(demoFixturePath);
 
+const demoSiteRoot = fileURLToPath(new URL("../../../tests/fixtures/site", import.meta.url));
+
 const { app, service } = createPinkBridge({
   logger: true,
   store,
-  service: demoAvailable ? { demoFixturePath } : {},
+  service: demoAvailable ? { demoFixturePath, demoSiteRoot } : {},
 });
 
 const recovered = await service.recoverInterrupted();

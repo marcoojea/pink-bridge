@@ -53,3 +53,16 @@ describe("filterFindings", () => {
     );
   });
 });
+
+describe("filterFindings por viewport", () => {
+  it("filtra por tamaño de pantalla combinado con el resto de criterios", () => {
+    const withViewport = [
+      finding({ id: "m", viewport: "mobile", impact: "critical" }),
+      finding({ id: "d", viewport: "desktop", impact: "critical" }),
+    ];
+    expect(
+      filterFindings(withViewport, { ...NO_FILTERS, viewport: "mobile" }).map((f) => f.id),
+    ).toEqual(["m"]);
+    expect(filterFindings(withViewport, { ...NO_FILTERS, viewport: "" })).toHaveLength(2);
+  });
+});

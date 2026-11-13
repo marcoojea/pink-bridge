@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { AnalysisSummary, Impact } from "@pink-bridge/shared";
 import { IMPACT_LABELS } from "../labels.js";
 
@@ -10,19 +11,19 @@ export function SummaryCards({ summary }: { readonly summary: AnalysisSummary })
     <section aria-labelledby="titulo-resumen" className="card">
       <h2 id="titulo-resumen">Resumen</h2>
       <dl className="summary-grid">
-        <div>
+        <div style={{ "--i": 0 } as CSSProperties}>
           <dt>Incidencias automáticas</dt>
           <dd>{summary.automaticFindings}</dd>
         </div>
-        <div>
+        <div style={{ "--i": 1 } as CSSProperties}>
           <dt>Elementos afectados</dt>
           <dd>{summary.affectedNodes}</dd>
         </div>
-        <div>
+        <div style={{ "--i": 2 } as CSSProperties}>
           <dt>Para revisión manual</dt>
           <dd>{summary.needsReview}</dd>
         </div>
-        <div>
+        <div style={{ "--i": 3 } as CSSProperties}>
           <dt>Comprobaciones superadas por axe</dt>
           <dd>{summary.passedRules}</dd>
         </div>
