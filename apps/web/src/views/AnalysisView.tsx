@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Analysis } from "@pink-bridge/shared";
 import { getAnalysis } from "../api/client.js";
+import { AgentPromptPanel } from "../components/AgentPromptPanel.js";
 import { FindingsPanel } from "../components/FindingsPanel.js";
 import { SummaryCards } from "../components/SummaryCards.js";
 import { formatDate, formatDuration, STAGE_LABELS, STAGE_ORDER, STATUS_LABELS } from "../labels.js";
@@ -142,6 +143,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
             Prompt para Claude Code o Codex (Markdown)
           </a>
         </nav>
+        <AgentPromptPanel analysisId={analysis.id} />
       </div>
       {analysis.summary !== null && <SummaryCards summary={analysis.summary} />}
       <FindingsPanel analysisId={analysis.id} />

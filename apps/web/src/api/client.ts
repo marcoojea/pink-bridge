@@ -83,6 +83,22 @@ export async function createAnalysis(request: CreateAnalysisRequest): Promise<Cr
   return { created: response.status === 202, analysis: parsed.data };
 }
 
+/** Texto Markdown del prompt para agentes. No es JSON, por eso no pasa por `send`. */
+export async function getAgentPromptText(id: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/analyses/${encodeURIComponent(id)}/agent-prompts`, {
+      headers: { accept: "text/markdown" },
+    });
+  } catch {
+    throw new ApiRequestError(0, "network_error", "No se pudo conectar con el servidor.");
+  }
+  if (!response.ok) {
+    throw new ApiRequestError(response.status, "unexpected", "No se pudo obtener el prompt.");
+  }
+  return response.text();
+}
+
 export async function getAnalysis(id: string): Promise<Analysis> {
   const response = await send(`/api/analyses/${encodeURIComponent(id)}`);
   const parsed = analysisSchema.safeParse(response.body);
