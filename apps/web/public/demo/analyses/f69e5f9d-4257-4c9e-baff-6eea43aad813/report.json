@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-14T20:14:19.827Z",
+  "tool": {
+    "name": "Pink Bridge",
+    "version": "0.1.0"
+  },
+  "analysis": {
+    "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+    "url": "https://demo.pinkbridge.test/",
+    "normalizedUrl": "https://demo.pinkbridge.test/",
+    "source": "demo",
+    "createdAt": "2026-11-14T20:14:22.146Z",
+    "finishedAt": "2026-11-14T20:14:23.956Z",
+    "durationMs": 1810,
+    "axeVersion": "4.14.0",
+    "ruleSet": "Reglas por defecto de axe-core 4.14.0"
+  },
+  "summary": {
+    "automaticRules": 4,
+    "automaticFindings": 10,
+    "affectedNodes": 7,
+    "needsReview": 7,
+    "passedRules": 258,
+    "byImpact": {
+      "critical": 3,
+      "serious": 7,
+      "moderate": 0,
+      "minor": 0,
+      "unknown": 0
+    },
+    "pagesAnalyzed": 4
+  },
+  "findings": [
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p0:desktop",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-broken-link:p0:desktop",
+      "kind": "automatic",
+      "ruleId": "qa-broken-link",
+      "impact": "serious",
+      "description": "Enlaces a páginas con error HTTP: 404 https://demo.pinkbridge.test/no-existe.html",
+      "recommendation": "Corrige el destino del enlace o retíralo.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p1:tablet",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p2:mobile",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p3:desktop",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": [
+        {
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p3:desktop",
+      "kind": "automatic",
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p3:desktop",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p4:tablet",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": [
+        {
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p4:tablet",
+      "kind": "automatic",
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p4:tablet",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p5:mobile",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": [
+        {
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p5:mobile",
+      "kind": "automatic",
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p5:mobile",
+      "kind": "needs_review",
+      "ruleId": "qa-console-error",
+      "impact": "moderate",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-form-no-feedback:p6:desktop:f0",
+      "kind": "needs_review",
+      "ruleId": "qa-form-no-feedback",
+      "impact": "serious",
+      "description": "El formulario 1 acepta un envío vacío sin mostrar ningún error, aunque tiene 2 campo(s) obligatorio(s) o campos tipados.",
+      "recommendation": "Valida en cliente y servidor, y muestra el error asociado al campo (aria-invalid y texto visible).",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 1,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p9:desktop",
+      "kind": "automatic",
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "description": "La página no se pudo auditar en desktop (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 0,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p10:tablet",
+      "kind": "automatic",
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "description": "La página no se pudo auditar en tablet (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 0,
+      "review": null,
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p11:mobile",
+      "kind": "automatic",
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "description": "La página no se pudo auditar en mobile (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "wcagReferences": [],
+      "helpUrl": null,
+      "affectedNodeCount": 0,
+      "review": null,
+      "nodes": []
+    }
+  ],
+  "limitations": [
+    "Las pruebas automáticas no sustituyen la navegación manual con teclado.",
+    "No sustituyen las pruebas con lectores de pantalla ni con otros productos de apoyo.",
+    "No evalúan el zoom al 200 % ni el reflow del contenido; solo detectan algunos problemas relacionados.",
+    "Solo evalúan la página en el momento de la carga: no cubren flujos interactivos ni contenido que aparece después.",
+    "No sustituyen las pruebas con personas usuarias reales ni con distintos navegadores y dispositivos.",
+    "Los estados de revisión son decisiones humanas y no se verifican automáticamente.",
+    "Este informe no certifica la conformidad con WCAG 2.2."
+  ]
+}

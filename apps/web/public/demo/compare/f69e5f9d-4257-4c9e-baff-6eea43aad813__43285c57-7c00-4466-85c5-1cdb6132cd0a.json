@@ -1,0 +1,106 @@
+{
+  "baselineAnalysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+  "targetAnalysisId": "43285c57-7c00-4466-85c5-1cdb6132cd0a",
+  "normalizedUrl": "https://demo.pinkbridge.test/",
+  "newFindings": [],
+  "resolvedFindings": [],
+  "persistentFindings": [
+    {
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p3:desktop",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:image-alt:p3:desktop",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p4:tablet",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:image-alt:p4:tablet",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "image-alt",
+      "impact": "critical",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p5:mobile",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:image-alt:p5:mobile",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "qa-broken-link",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-broken-link:p0:desktop",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-broken-link:p0:desktop",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p9:desktop",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-page-unreachable:p9:desktop",
+      "affectedNodeCount": 0
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p10:tablet",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-page-unreachable:p10:tablet",
+      "affectedNodeCount": 0
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p11:mobile",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-page-unreachable:p11:mobile",
+      "affectedNodeCount": 0
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p3:desktop",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-resource-error:p3:desktop",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p4:tablet",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-resource-error:p4:tablet",
+      "affectedNodeCount": 1
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "impact": "serious",
+      "matchType": "exact",
+      "baselineFindingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p5:mobile",
+      "targetFindingId": "43285c57-7c00-4466-85c5-1cdb6132cd0a:automatic:qa-resource-error:p5:mobile",
+      "affectedNodeCount": 1
+    }
+  ],
+  "summaryDelta": {
+    "automaticFindings": 0,
+    "affectedNodes": 0,
+    "byImpact": {
+      "critical": 0,
+      "serious": 0,
+      "moderate": 0,
+      "minor": 0,
+      "unknown": 0
+    }
+  },
+  "limitations": [
+    "Solo se comparan las incidencias automáticas; las comprobaciones de revisión manual no entran en la comparación.",
+    "Una incidencia 'resuelta' ha desaparecido en el segundo análisis. No equivale a una corrección verificada: puede deberse a cambios en el DOM, en el contenido o en la versión de axe-core.",
+    "Las coincidencias exactas requieren el mismo selector y el mismo fragmento HTML saneado. Las aproximadas solo coinciden en la regla y el fragmento, y pueden no corresponder al mismo elemento.",
+    "Cada análisis evalúa la página en el momento de la carga; no recoge estados tras interacción del usuario."
+  ]
+}

@@ -1,0 +1,433 @@
+{
+  "items": [
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p0:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "desktop",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "help": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "d85376589272549550ce5fb3e0c546876a868d5ff0ab17628bdac1bd815f1505",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-broken-link:p0:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "desktop",
+      "ruleId": "qa-broken-link",
+      "description": "Enlaces a páginas con error HTTP: 404 https://demo.pinkbridge.test/no-existe.html",
+      "help": "Enlaces a páginas con error HTTP: 404 https://demo.pinkbridge.test/no-existe.html",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Corrige el destino del enlace o retíralo.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "911eb15c7a4f8a0f507b9afdf7f3703b487eec85980da036604a4d83d1ff62d0",
+        "loose": "a59480f4574333c0a878c7ee0f99d88a8e9e91f749a292118f0667e4121bea0b"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p1:tablet",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "tablet",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "help": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "27ea1b4e949b8c8f204d2976de1e7fb1e88862e1d03fb65fda173cc56629dc12",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p2:mobile",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "mobile",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "help": "Errores en la consola del navegador: Error de consola intencionado para la prueba QA",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "1704a16a7ecea5f8b247cda6860e4ea1e5154ac3ee30c8542fc4eaf51a03e92b",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p3:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "help": "Images must have alternative text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "impact": "critical",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "affectedNodeCount": 1,
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      },
+      "nodes": [
+        {
+          "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p3:desktop:0",
+          "findingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p3:desktop",
+          "target": [
+            "img"
+          ],
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p3:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "ruleId": "qa-resource-error",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "help": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "49c6c7be33b553e9e13a745c05f6a929d567bef01871ecfa722358e281735eb4",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p3:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "help": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "6d586484417c665d8e5c4ebc71d4af638d025426f35d4a036d68ec22f50fd5bf",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p4:tablet",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "help": "Images must have alternative text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "impact": "critical",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "affectedNodeCount": 1,
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      },
+      "nodes": [
+        {
+          "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p4:tablet:0",
+          "findingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p4:tablet",
+          "target": [
+            "img"
+          ],
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p4:tablet",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "ruleId": "qa-resource-error",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "help": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "4f444c08618ff61c3e106a6b88f2b11995ed97d3aa7d8ccdb7445828145ad2b1",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p4:tablet",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "help": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "d344b747e0f938a6cbbde16ad5269871e1f07748987e5f6df06a3e0563b53f79",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p5:mobile",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "kind": "automatic",
+      "ruleId": "image-alt",
+      "description": "Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.",
+      "help": "Images must have alternative text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "impact": "critical",
+      "wcagReferences": [
+        "1.1.1"
+      ],
+      "affectedNodeCount": 1,
+      "recommendation": "Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=\"\" o aria-hidden=\"true\".",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      },
+      "nodes": [
+        {
+          "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p5:mobile:0",
+          "findingId": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:image-alt:p5:mobile",
+          "target": [
+            "img"
+          ],
+          "selector": "img",
+          "evidence": [
+            {
+              "type": "html_snippet",
+              "content": "<img src=\"/logo.png\" width=\"120\" height=\"40\">",
+              "redacted": false
+            },
+            {
+              "type": "failure_summary",
+              "content": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "redacted": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-resource-error:p5:mobile",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "ruleId": "qa-resource-error",
+      "description": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "help": "Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "de250e4171a44602cc48c7c91651e43f172351bb36d294a0d761cf3fdc4601d2",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-console-error:p5:mobile",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "ruleId": "qa-console-error",
+      "description": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "help": "Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "helpUrl": null,
+      "impact": "moderate",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Revisa si el error afecta a la página. Puede venir de un tercero.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "ad9668d04fa5cb7197e99c931dc65abd3a1bcde85ab38abf62adb2a2736e1271",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:needs_review:qa-form-no-feedback:p6:desktop:f0",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "needs_review",
+      "pageUrl": "https://demo.pinkbridge.test/contacto.html",
+      "viewport": "desktop",
+      "ruleId": "qa-form-no-feedback",
+      "description": "El formulario 1 acepta un envío vacío sin mostrar ningún error, aunque tiene 2 campo(s) obligatorio(s) o campos tipados.",
+      "help": "El formulario 1 acepta un envío vacío sin mostrar ningún error, aunque tiene 2 campo(s) obligatorio(s) o campos tipados.",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 1,
+      "recommendation": "Valida en cliente y servidor, y muestra el error asociado al campo (aria-invalid y texto visible).",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "888f15b72a0d19320163b1d67afd81147bdab403bf348b9e75cebc955a111877",
+        "loose": "be1323846edfb9c52cc4dfba0852ff81745f2a3251d723daf38b238cf71e523b"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p9:desktop",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "desktop",
+      "ruleId": "qa-page-unreachable",
+      "description": "La página no se pudo auditar en desktop (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "help": "La página no se pudo cargar, así que no se ha comprobado.",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 0,
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "5cf627d458dc52ba92bc8169741ef709b92e26df5ce22efff6646efcefa03163",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p10:tablet",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "tablet",
+      "ruleId": "qa-page-unreachable",
+      "description": "La página no se pudo auditar en tablet (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "help": "La página no se pudo cargar, así que no se ha comprobado.",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 0,
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "7cac5f61b247a7ca5947d576b4034909e7ad9c499436ca50c748b7335ef9dc44",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      },
+      "nodes": []
+    },
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813:automatic:qa-page-unreachable:p11:mobile",
+      "analysisId": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "kind": "automatic",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "mobile",
+      "ruleId": "qa-page-unreachable",
+      "description": "La página no se pudo auditar en mobile (http_error (HTTP 404)): La página respondió con el estado HTTP 404.",
+      "help": "La página no se pudo cargar, así que no se ha comprobado.",
+      "helpUrl": null,
+      "impact": "serious",
+      "wcagReferences": [],
+      "affectedNodeCount": 0,
+      "recommendation": "Revisa que la página carga en este tamaño y en este entorno.",
+      "detectedAt": "2026-11-14T20:14:23.955Z",
+      "fingerprint": {
+        "strong": "aaed8d35a9a056f7d64345cac1be1b2c1f46965055f4efb494296414ed15ef49",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      },
+      "nodes": []
+    }
+  ],
+  "total": 17,
+  "limit": 500,
+  "offset": 0
+}

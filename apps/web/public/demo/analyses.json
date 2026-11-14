@@ -1,0 +1,71 @@
+{
+  "items": [
+    {
+      "id": "f69e5f9d-4257-4c9e-baff-6eea43aad813",
+      "url": "https://demo.pinkbridge.test/",
+      "normalizedUrl": "https://demo.pinkbridge.test/",
+      "source": "demo",
+      "mode": "site",
+      "maxPages": 5,
+      "createdAt": "2026-11-14T20:14:22.146Z",
+      "startedAt": "2026-11-14T20:14:22.146Z",
+      "finishedAt": "2026-11-14T20:14:23.956Z",
+      "durationMs": 1810,
+      "status": "completed",
+      "stage": "completed",
+      "axeVersion": "4.14.0",
+      "summary": {
+        "automaticRules": 4,
+        "automaticFindings": 10,
+        "affectedNodes": 7,
+        "needsReview": 7,
+        "passedRules": 258,
+        "byImpact": {
+          "critical": 3,
+          "serious": 7,
+          "moderate": 0,
+          "minor": 0,
+          "unknown": 0
+        },
+        "pagesAnalyzed": 4
+      },
+      "errorCode": null,
+      "errorMessage": null
+    },
+    {
+      "id": "43285c57-7c00-4466-85c5-1cdb6132cd0a",
+      "url": "https://demo.pinkbridge.test/",
+      "normalizedUrl": "https://demo.pinkbridge.test/",
+      "source": "demo",
+      "mode": "site",
+      "maxPages": 5,
+      "createdAt": "2026-11-14T20:14:19.828Z",
+      "startedAt": "2026-11-14T20:14:19.828Z",
+      "finishedAt": "2026-11-14T20:14:22.144Z",
+      "durationMs": 2316,
+      "status": "completed",
+      "stage": "completed",
+      "axeVersion": "4.14.0",
+      "summary": {
+        "automaticRules": 4,
+        "automaticFindings": 10,
+        "affectedNodes": 7,
+        "needsReview": 7,
+        "passedRules": 258,
+        "byImpact": {
+          "critical": 3,
+          "serious": 7,
+          "moderate": 0,
+          "minor": 0,
+          "unknown": 0
+        },
+        "pagesAnalyzed": 4
+      },
+      "errorCode": null,
+      "errorMessage": null
+    }
+  ],
+  "total": 2,
+  "limit": 20,
+  "offset": 0
+}

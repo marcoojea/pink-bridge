@@ -27,6 +27,8 @@
     "test:integration": "npm run build:shared && npm run test:integration --workspaces --if-present",
     "test:e2e": "npm run build:shared && playwright test",
     "docs:screenshots": "playwright test -c playwright.docs.config.ts && node scripts/make-gif.mjs",
+    "docs:demo-snapshot": "tsx scripts/make-demo-snapshot.ts",
+    "build:demo": "npm run build:shared && VITE_DEMO=1 VITE_BASE=/pink-bridge/ npm run build -w @pink-bridge/web",
     "audit": "npm audit --audit-level=high",
     "prepare": "husky"
   },

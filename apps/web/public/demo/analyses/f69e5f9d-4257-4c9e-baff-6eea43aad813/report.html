@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+  <title>Informe de accesibilidad: https://demo.pinkbridge.test/</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.55; margin: 0 auto; max-width: 52rem; padding: 1.25rem; color: #1d1520; background: #fff; }
+    h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; margin-top: 2rem; } h3 { font-size: 1.05rem; }
+    article { border: 1px solid #d8cdd6; border-radius: 0.6rem; padding: 0.9rem 1rem; margin-bottom: 1rem; }
+    pre { background: #f1ecf7; padding: 0.5rem; border-radius: 0.4rem; white-space: pre-wrap; word-break: break-word; }
+    .badge { display: inline-block; border: 1px solid #8a7a8c; border-radius: 999px; padding: 0 0.5rem; font-size: 0.85rem; }
+    dt { color: #4f4152; } dd { margin: 0 0 0.5rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Informe de accesibilidad</h1>
+  <p>Generado por Pink Bridge 0.1.0 el 2026-11-14T20:14:19.827Z.</p>
+  <dl>
+    <dt>Dirección analizada</dt><dd>https://demo.pinkbridge.test/</dd>
+    <dt>Fecha del análisis</dt><dd>2026-11-14T20:14:22.146Z</dd>
+    <dt>Duración</dt><dd>1810 ms</dd>
+    <dt>Motor</dt><dd>Reglas por defecto de axe-core 4.14.0</dd>
+  </dl>
+
+  <h2>Resumen</h2>
+  <ul>
+    <li>Incidencias automáticas: 10</li>
+    <li>Elementos afectados: 7</li>
+    <li>Comprobaciones para revisión manual: 7 (no están aprobadas)</li>
+    <li>Comprobaciones superadas por axe: 258</li>
+  </ul>
+
+  <h2>Incidencias automáticas</h2>
+  <article>
+  <h3>qa-broken-link</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>Enlaces a páginas con error HTTP: 404 https://demo.pinkbridge.test/no-existe.html</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Corrige el destino del enlace o retíralo.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>image-alt</h3>
+  <p><span class="badge">Crítico</span> <span class="badge">Incidencia automática</span></p>
+  <p>Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.</p>
+  <p>WCAG 1.1.1</p>
+  <p><strong>Recomendación:</strong> Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=&quot;&quot; o aria-hidden=&quot;true&quot;.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol><li><p>Selector: <code>img</code></p><pre><code>&lt;img src=&quot;/logo.png&quot; width=&quot;120&quot; height=&quot;40&quot;&gt;</code></pre><pre><code>Fix any of the following:
+  Element does not have an alt attribute
+  aria-label attribute does not exist or is empty
+  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty
+  Element has no title attribute
+  Element&#39;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</code></pre></li></ol>
+</article>
+<article>
+  <h3>qa-resource-error</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>image-alt</h3>
+  <p><span class="badge">Crítico</span> <span class="badge">Incidencia automática</span></p>
+  <p>Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.</p>
+  <p>WCAG 1.1.1</p>
+  <p><strong>Recomendación:</strong> Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=&quot;&quot; o aria-hidden=&quot;true&quot;.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol><li><p>Selector: <code>img</code></p><pre><code>&lt;img src=&quot;/logo.png&quot; width=&quot;120&quot; height=&quot;40&quot;&gt;</code></pre><pre><code>Fix any of the following:
+  Element does not have an alt attribute
+  aria-label attribute does not exist or is empty
+  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty
+  Element has no title attribute
+  Element&#39;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</code></pre></li></ol>
+</article>
+<article>
+  <h3>qa-resource-error</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>image-alt</h3>
+  <p><span class="badge">Crítico</span> <span class="badge">Incidencia automática</span></p>
+  <p>Una imagen no tiene texto alternativo, así que un lector de pantalla no puede describirla.</p>
+  <p>WCAG 1.1.1</p>
+  <p><strong>Recomendación:</strong> Añade un atributo alt descriptivo. Si la imagen es decorativa, usa alt=&quot;&quot; o aria-hidden=&quot;true&quot;.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol><li><p>Selector: <code>img</code></p><pre><code>&lt;img src=&quot;/logo.png&quot; width=&quot;120&quot; height=&quot;40&quot;&gt;</code></pre><pre><code>Fix any of the following:
+  Element does not have an alt attribute
+  aria-label attribute does not exist or is empty
+  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty
+  Element has no title attribute
+  Element&#39;s default semantics were not overridden with role=&quot;none&quot; or role=&quot;presentation&quot;</code></pre></li></ol>
+</article>
+<article>
+  <h3>qa-resource-error</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>Recursos que responden con error HTTP: 404 https://demo.pinkbridge.test/logo.png</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Corrige o elimina los recursos rotos (imágenes, scripts, hojas de estilo).</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-page-unreachable</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>La página no se pudo auditar en desktop (http_error (HTTP 404)): La página respondió con el estado HTTP 404.</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa que la página carga en este tamaño y en este entorno.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 0</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-page-unreachable</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>La página no se pudo auditar en tablet (http_error (HTTP 404)): La página respondió con el estado HTTP 404.</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa que la página carga en este tamaño y en este entorno.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 0</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-page-unreachable</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Incidencia automática</span></p>
+  <p>La página no se pudo auditar en mobile (http_error (HTTP 404)): La página respondió con el estado HTTP 404.</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa que la página carga en este tamaño y en este entorno.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 0</p>
+  <ol></ol>
+</article>
+
+  <h2>Comprobaciones para revisión manual</h2>
+  <article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Error de consola intencionado para la prueba QA</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Error de consola intencionado para la prueba QA</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Error de consola intencionado para la prueba QA</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-console-error</h3>
+  <p><span class="badge">Moderado</span> <span class="badge">Revisión manual</span></p>
+  <p>Errores en la consola del navegador: Failed to load resource: the server responded with a status of 404 (Not Found)</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Revisa si el error afecta a la página. Puede venir de un tercero.</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+<article>
+  <h3>qa-form-no-feedback</h3>
+  <p><span class="badge">Grave</span> <span class="badge">Revisión manual</span></p>
+  <p>El formulario 1 acepta un envío vacío sin mostrar ningún error, aunque tiene 2 campo(s) obligatorio(s) o campos tipados.</p>
+  <p>Sin criterio WCAG asociado (buena práctica)</p>
+  <p><strong>Recomendación:</strong> Valida en cliente y servidor, y muestra el error asociado al campo (aria-invalid y texto visible).</p>
+  <p>Estado de revisión: pendiente</p>
+  <p>Elementos afectados: 1</p>
+  <ol></ol>
+</article>
+
+  <h2>Limitaciones de la prueba</h2>
+  <ul><li>Las pruebas automáticas no sustituyen la navegación manual con teclado.</li><li>No sustituyen las pruebas con lectores de pantalla ni con otros productos de apoyo.</li><li>No evalúan el zoom al 200 % ni el reflow del contenido; solo detectan algunos problemas relacionados.</li><li>Solo evalúan la página en el momento de la carga: no cubren flujos interactivos ni contenido que aparece después.</li><li>No sustituyen las pruebas con personas usuarias reales ni con distintos navegadores y dispositivos.</li><li>Los estados de revisión son decisiones humanas y no se verifican automáticamente.</li><li>Este informe no certifica la conformidad con WCAG 2.2.</li></ul>
+</main>
+</body>
+</html>
