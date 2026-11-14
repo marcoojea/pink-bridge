@@ -1,0 +1,32 @@
+# Ejecuta la API y la interfaz con un solo comando: `docker compose up --build`.
+# La interfaz queda en http://127.0.0.1:8080. Nada se publica fuera de este equipo.
+# No hay secretos en este fichero: la base de datos vive en un volumen local.
+services:
+  api:
+    build:
+      context: .
+      target: api
+    image: pink-bridge-api:local
+    # Chromium necesita crear sus propios namespaces para su sandbox, y el perfil seccomp por defecto
+    # de Docker lo impide. Solo se desactiva el filtro seccomp: el sandbox de Chromium sigue activo
+    # y el proceso corre como usuario node, sin privilegios de root.
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - pink-bridge-data:/app/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+    image: pink-bridge-web:local
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
+
+volumes:
+  pink-bridge-data:
