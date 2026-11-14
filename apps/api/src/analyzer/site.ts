@@ -56,6 +56,8 @@ export interface SiteRunOptions {
   readonly allowedPorts?: readonly number[];
   readonly limits?: Partial<RunLimits>;
   readonly testOnlyTrustedHosts?: readonly string[];
+  /** Pausa entre lotes de páginas, para no saturar el sitio auditado. Por defecto, ninguna. */
+  readonly pauseMs?: number;
 }
 
 export interface SiteRunResult {
@@ -71,6 +73,11 @@ export interface SiteRunResult {
 type Attempt =
   | { readonly ok: true; readonly run: RunResult }
   | { readonly ok: false; readonly error: AnalysisRunError };
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** Normaliza un enlace: mismo origen, http(s), sin fragmento y sin recursos estáticos. */
 function normalizeLink(href: string, origin: string): string | null {
@@ -164,6 +171,9 @@ export async function runSite(options: SiteRunOptions): Promise<SiteRunResult> {
         }
       }
 
+      if (pages.length > 0 && (options.pauseMs ?? 0) > 0) {
+        await sleep(options.pauseMs ?? 0);
+      }
       const results = await Promise.all(
         batch.map((url) =>
           Promise.all(
