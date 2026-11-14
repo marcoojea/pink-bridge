@@ -1,0 +1,55 @@
+name: Auditoría de accesibilidad (demo)
+
+# Ejecuta el CLI de Pink Bridge contra el sitio de demostración del repositorio y lo compara
+# con la línea base versionada en .github/a11y/. Si aparece una incidencia nueva con gravedad
+# grave o crítica, el job falla: así se ve el mecanismo que un equipo usaría en sus pull requests.
+# No necesita secretos: el sitio de demostración se sirve desde el propio motor, sin red.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Mismo ajuste que ci.yml: Ubuntu reciente restringe los namespaces de usuario del sandbox.
+      - name: Habilitar sandbox de Chromium en el runner
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      - name: Auditar el sitio de demostración frente a la línea base
+        run: >
+          npm run cli -- audit --demo-site
+          --baseline .github/a11y/baseline-demo.json
+          --fail-on-new --min-impact serious
+          --report a11y-report
+
+      - name: Subir informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: a11y-report/
+          if-no-files-found: ignore
+          retention-days: 14
