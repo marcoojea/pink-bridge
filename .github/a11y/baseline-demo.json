@@ -10,18 +10,6 @@
       "kind": "automatic",
       "impact": "critical",
       "pageUrl": "https://demo.pinkbridge.test/servicios.html",
-      "viewport": "desktop",
-      "affectedNodeCount": 1,
-      "fingerprint": {
-        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
-        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
-      }
-    },
-    {
-      "ruleId": "image-alt",
-      "kind": "automatic",
-      "impact": "critical",
-      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
       "viewport": "mobile",
       "affectedNodeCount": 1,
       "fingerprint": {
