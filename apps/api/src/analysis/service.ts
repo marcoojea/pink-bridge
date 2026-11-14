@@ -12,8 +12,8 @@ import type {
 } from "@pink-bridge/shared";
 import { compareAnalyses } from "./compare.js";
 import { normalizeAxeResults } from "../analyzer/normalize.js";
-import { pageErrorFinding, qaFindings } from "../analyzer/qa.js";
-import { runSite, type PageOutcome } from "../analyzer/site.js";
+import { runSite } from "../analyzer/site.js";
+import { siteFindings, summarizeFindings } from "../analyzer/audit.js";
 import {
   AnalysisRunError,
   DEMO_ORIGIN,
@@ -509,37 +509,10 @@ export class AnalysisService {
 
       await this.store.updateAnalysis(id, { stage: "processing_results" });
       const detectedAt = this.now().toISOString();
-      const findings: Finding[] = [];
-      let axeVersion: string | null = null;
-      let passedRules = 0;
-
-      site.pages.forEach((page: PageOutcome, index: number) => {
-        const ctx = {
-          analysisId: id,
-          detectedAt,
-          pageUrl: page.url,
-          viewport: page.viewport,
-          scope: `p${String(index)}:${page.viewport}`,
-        };
-        if (!page.ok) {
-          findings.push(pageErrorFinding(ctx, page.code, page.message, page.httpStatus));
-          return;
-        }
-        axeVersion ??= page.run.raw.testEngine.version;
-        passedRules += page.run.raw.passes.length;
-        findings.push(...normalizeAxeResults(page.run.raw, ctx).findings);
-        findings.push(
-          ...qaFindings(
-            {
-              observations: page.run.observations,
-              forms: page.run.forms,
-              brokenLinks:
-                page.viewport === "desktop" ? (site.brokenLinks.get(page.url) ?? []) : [],
-            },
-            ctx,
-          ),
-        );
-      });
+      const built = siteFindings(site, id, detectedAt);
+      const findings = built.findings;
+      const axeVersion = built.axeVersion;
+      const passedRules = built.passedRules;
 
       if (!site.pages.some((page) => page.ok)) {
         const failure = site.pages.find((page) => !page.ok);
@@ -553,11 +526,7 @@ export class AnalysisService {
       await this.store.updateAnalysis(id, { stage: "saving_report" });
       await this.store.insertFindings(id, findings);
 
-      const automatic = findings.filter((finding) => finding.kind === "automatic");
-      const byImpact = { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 };
-      for (const finding of automatic) {
-        byImpact[finding.impact] += 1;
-      }
+      const summary = summarizeFindings(findings, passedRules, site.pagesVisited);
       const finishedAt = this.now();
       await this.store.updateAnalysis(id, {
         status: "completed",
@@ -565,15 +534,7 @@ export class AnalysisService {
         finishedAt: finishedAt.toISOString(),
         durationMs: finishedAt.getTime() - startedAt.getTime(),
         axeVersion,
-        summary: {
-          automaticRules: new Set(automatic.map((finding) => finding.ruleId)).size,
-          automaticFindings: automatic.length,
-          affectedNodes: automatic.reduce((total, finding) => total + finding.affectedNodeCount, 0),
-          needsReview: findings.length - automatic.length,
-          passedRules,
-          byImpact,
-          pagesAnalyzed: site.pagesVisited,
-        },
+        summary,
         errorCode: null,
         errorMessage: null,
       });
