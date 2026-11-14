@@ -10,7 +10,8 @@ export type Route =
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseRoute(hash: string): Route {
-  const path = hash.replace(/^#/, "").replace(/\/+$/, "") || "/";
+  // La query (?gravedad=critical) describe filtros de la vista, no cambia la ruta.
+  const path = (hash.replace(/^#/, "").split("?")[0] ?? "").replace(/\/+$/, "") || "/";
   if (path === "/") {
     return { name: "home" };
   }
@@ -47,6 +48,23 @@ export function analysisHref(id: string): string {
 
 export function compareHref(from: string, to: string): string {
   return `#/comparar/${from}/${to}`;
+}
+
+/** Parámetros de la query del hash, p. ej. #/analisis/<id>?gravedad=critical. */
+export function hashParams(hash: string = window.location.hash): URLSearchParams {
+  const index = hash.indexOf("?");
+  return new URLSearchParams(index === -1 ? "" : hash.slice(index + 1));
+}
+
+/** Refleja filtros en la dirección sin añadir entradas al historial ni recargar la página. */
+export function setHashParams(params: URLSearchParams): void {
+  const base = window.location.hash.split("?")[0] ?? "#/";
+  const query = params.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${base}${query === "" ? "" : `?${query}`}`,
+  );
 }
 
 /** Único punto de navegación programática: cambia el hash sin recargar la página. */

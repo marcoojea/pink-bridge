@@ -34,19 +34,27 @@ export const listAnalysesResponseSchema = z
   .strict();
 export type ListAnalysesResponse = z.infer<typeof listAnalysesResponseSchema>;
 
+export const FINDINGS_PAGE_MAX = 1000;
+
 export const findingsQuerySchema = z
   .object({
     kind: z.enum(["automatic", "needs_review"]).optional(),
     impact: impactSchema.optional(),
     ruleId: z.string().min(1).max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(FINDINGS_PAGE_MAX).default(FINDINGS_PAGE_MAX),
+    offset: z.coerce.number().int().min(0).default(0),
   })
   .strict();
-export type FindingsQuery = z.infer<typeof findingsQuerySchema>;
+/** Entrada del cliente: `limit` y `offset` son opcionales y toman sus valores por defecto. */
+export type FindingsQuery = z.input<typeof findingsQuerySchema>;
 
 export const findingsResponseSchema = z
   .object({
     items: z.array(findingSchema),
+    /** Total de incidencias que cumplen el filtro, sin paginar. */
     total: z.number().int().nonnegative(),
+    limit: z.number().int().positive(),
+    offset: z.number().int().nonnegative(),
   })
   .strict();
 export type FindingsResponse = z.infer<typeof findingsResponseSchema>;

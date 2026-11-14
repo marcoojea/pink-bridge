@@ -16,6 +16,7 @@ import {
 import { messageOf } from "./HomeView.js";
 
 const POLL_MS = 1000;
+const POLL_MAX_MS = 5000;
 
 function isActive(analysis: Analysis): boolean {
   return analysis.status === "queued" || analysis.status === "running";
@@ -56,24 +57,24 @@ export function AnalysisView({ id }: { readonly id: string }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // Espera creciente mientras la revisión está en curso: 1 s, 2 s, 4 s y, después, 5 s.
+    let delay = POLL_MS;
 
     const tick = async (): Promise<void> => {
       try {
-        const next = await getAnalysis(id);
-        if (cancelled) {
-          return;
-        }
+        const next = await getAnalysis(id, controller.signal);
         setAnalysis(next);
         setLoadError(null);
         if (isActive(next)) {
           timer = setTimeout(() => {
             void tick();
-          }, POLL_MS);
+          }, delay);
+          delay = Math.min(delay * 2, POLL_MAX_MS);
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoadError(messageOf(error));
         }
       }
@@ -81,7 +82,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
 
     void tick();
     return () => {
-      cancelled = true;
+      controller.abort();
       if (timer !== undefined) {
         clearTimeout(timer);
       }

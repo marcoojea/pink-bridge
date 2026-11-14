@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { createApiError } from "@pink-bridge/shared";
@@ -11,7 +12,25 @@ const querySchema = z.object({ format: z.enum(["json", "html"]).default("json") 
 
 const HTML_CSP = "default-src 'none'; style-src 'unsafe-inline'";
 
+const REPORT_CACHE_SIZE = 50;
+
+function digest(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+/** Caché acotada: descarta la entrada más antigua al superar el tamaño. */
+function rememberReport(cache: Map<string, string>, key: string, body: string): void {
+  cache.set(key, body);
+  if (cache.size > REPORT_CACHE_SIZE) {
+    const oldest = cache.keys().next();
+    if (oldest.value !== undefined) {
+      cache.delete(oldest.value);
+    }
+  }
+}
+
 export function registerReportRoutes(app: FastifyInstance, service: AnalysisService): void {
+  const reportCache = new Map<string, string>();
   app.get("/api/analyses/:id/report", async (request, reply) => {
     const params = paramsSchema.safeParse(request.params);
     const query = querySchema.safeParse(request.query);
@@ -29,25 +48,32 @@ export function registerReportRoutes(app: FastifyInstance, service: AnalysisServ
       if (!data) {
         return await reply.code(404).send(createApiError("not_found", "Análisis no encontrado."));
       }
-      const model = buildReport(
-        data.analysis,
-        data.findings,
-        data.reviews,
-        new Date().toISOString(),
-      );
       const filename = `pink-bridge-${params.data.id}.${query.data.format}`;
+      // Un análisis completado no cambia; solo cambian sus revisiones. La clave lo refleja.
+      const key = `${params.data.id}|${query.data.format}|${digest(data.reviews)}`;
+      let body = reportCache.get(key);
+      if (body === undefined) {
+        const model = buildReport(
+          data.analysis,
+          data.findings,
+          data.reviews,
+          new Date().toISOString(),
+        );
+        body = query.data.format === "html" ? renderReportHtml(model) : renderReportJson(model);
+        rememberReport(reportCache, key, body);
+      }
 
       if (query.data.format === "html") {
         return await reply
           .header("content-type", "text/html; charset=utf-8")
           .header("content-security-policy", HTML_CSP)
           .header("content-disposition", `attachment; filename="${filename}"`)
-          .send(renderReportHtml(model));
+          .send(body);
       }
       return await reply
         .header("content-type", "application/json; charset=utf-8")
         .header("content-disposition", `attachment; filename="${filename}"`)
-        .send(renderReportJson(model));
+        .send(body);
     } catch (error) {
       if (error instanceof ServiceError) {
         return reply.code(error.status).send(createApiError(error.code, error.message));

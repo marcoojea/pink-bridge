@@ -3,7 +3,9 @@ import type { AnalysisErrorCode, ViewportName } from "@pink-bridge/shared";
 import {
   AnalysisRunError,
   DEMO_ORIGIN,
+  openSession,
   runAnalysis,
+  type BrowserSession,
   type RunLimits,
   type RunResult,
   type RunSource,
@@ -18,6 +20,12 @@ export const VIEWPORTS: Readonly<
   tablet: { width: 768, height: 1024 },
   desktop: { width: 1280, height: 800 },
 };
+
+/**
+ * Páginas auditadas a la vez. Cada una abre un contexto por viewport sobre el mismo Chromium,
+ * así que el tope protege la memoria sin repetir el arranque del navegador por página.
+ */
+export const PAGE_CONCURRENCY = 2;
 
 const SKIP_RESOURCE = /\.(png|jpe?g|gif|webp|svg|ico|pdf|zip|css|js|woff2?|mp4|webm|mp3)$/i;
 
@@ -48,6 +56,8 @@ export interface SiteRunOptions {
   readonly allowedPorts?: readonly number[];
   readonly limits?: Partial<RunLimits>;
   readonly testOnlyTrustedHosts?: readonly string[];
+  /** Pausa entre lotes de páginas, para no saturar el sitio auditado. Por defecto, ninguna. */
+  readonly pauseMs?: number;
 }
 
 export interface SiteRunResult {
@@ -59,6 +69,15 @@ export interface SiteRunResult {
     readonly { readonly href: string; readonly status: number }[]
   >;
 }
+
+type Attempt =
+  | { readonly ok: true; readonly run: RunResult }
+  | { readonly ok: false; readonly error: AnalysisRunError };
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** Normaliza un enlace: mismo origen, http(s), sin fragmento y sin recursos estáticos. */
 function normalizeLink(href: string, origin: string): string | null {
@@ -77,9 +96,35 @@ function normalizeLink(href: string, origin: string): string | null {
   return url.href;
 }
 
+/** Audita una página en un viewport. Los fallos esperados se devuelven; los inesperados se propagan. */
+async function auditPage(
+  url: string,
+  viewport: ViewportName,
+  session: BrowserSession,
+  sourceFor: (url: URL) => RunSource,
+  demo: boolean,
+): Promise<Attempt> {
+  try {
+    const run = await runAnalysis({
+      source: sourceFor(new URL(url)),
+      ...(demo ? { startPath: new URL(url).pathname } : {}),
+      viewport: VIEWPORTS[viewport],
+      probe: viewport === "desktop",
+      session,
+    });
+    return { ok: true, run };
+  } catch (error) {
+    if (!(error instanceof AnalysisRunError)) {
+      throw error;
+    }
+    return { ok: false, error };
+  }
+}
+
 /**
  * Recorre el sitio en anchura desde la URL inicial, dentro de su mismo origen, hasta maxPages páginas.
  * Cada página se audita en cada viewport; las sondas de formularios y enlaces solo corren en escritorio.
+ * Un único proxy y un único Chromium sirven a todo el recorrido.
  */
 export async function runSite(options: SiteRunOptions): Promise<SiteRunResult> {
   const demo = options.demoSiteRoot !== undefined;
@@ -96,75 +141,98 @@ export async function runSite(options: SiteRunOptions): Promise<SiteRunResult> {
         }
       : { kind: "url", url };
 
+  const session = await openSession({
+    ...(options.resolve !== undefined ? { resolve: options.resolve } : {}),
+    ...(options.allowedPorts !== undefined ? { allowedPorts: options.allowedPorts } : {}),
+    ...(options.limits !== undefined ? { limits: options.limits } : {}),
+    ...(options.testOnlyTrustedHosts !== undefined
+      ? { testOnlyTrustedHosts: options.testOnlyTrustedHosts }
+      : {}),
+  });
+
   const queue: string[] = [startUrl];
   const visited = new Set<string>();
   const failures = new Map<string, { code: AnalysisErrorCode; httpStatus?: number }>();
   const linksByPage = new Map<string, readonly string[]>();
   const pages: PageOutcome[] = [];
 
-  while (queue.length > 0 && visited.size < options.maxPages) {
-    const url = queue.shift();
-    if (url === undefined || visited.has(url)) {
-      continue;
-    }
-    visited.add(url);
+  try {
+    while (queue.length > 0 && visited.size < options.maxPages) {
+      const batch: string[] = [];
+      while (
+        queue.length > 0 &&
+        batch.length < PAGE_CONCURRENCY &&
+        visited.size < options.maxPages
+      ) {
+        const url = queue.shift();
+        if (url !== undefined && !visited.has(url)) {
+          visited.add(url);
+          batch.push(url);
+        }
+      }
 
-    for (const viewport of options.viewports) {
-      const desktop = viewport === "desktop";
-      try {
-        const run = await runAnalysis({
-          source: sourceFor(new URL(url)),
-          ...(demo ? { startPath: new URL(url).pathname } : {}),
-          viewport: VIEWPORTS[viewport],
-          probe: desktop,
-          ...(options.resolve !== undefined ? { resolve: options.resolve } : {}),
-          ...(options.allowedPorts !== undefined ? { allowedPorts: options.allowedPorts } : {}),
-          ...(options.limits !== undefined ? { limits: options.limits } : {}),
-          ...(options.testOnlyTrustedHosts !== undefined
-            ? { testOnlyTrustedHosts: options.testOnlyTrustedHosts }
-            : {}),
-        });
-        pages.push({ url, viewport, ok: true, run });
-        if (!originFromRedirect) {
-          // Si la URL inicial redirige a otro host (p. ej. www.), los enlaces se resuelven contra el destino final.
-          origin = new URL(run.finalUrl).origin;
-          originFromRedirect = true;
-        }
-        if (desktop) {
-          linksByPage.set(url, run.links);
-        }
-      } catch (error) {
-        if (!(error instanceof AnalysisRunError)) {
-          throw error;
-        }
-        pages.push({
-          url,
-          viewport,
-          ok: false,
-          code: error.code,
-          ...(error.httpStatus !== undefined ? { httpStatus: error.httpStatus } : {}),
-          message: error.message,
-        });
-        if (desktop) {
-          failures.set(url, {
+      if (pages.length > 0 && (options.pauseMs ?? 0) > 0) {
+        await sleep(options.pauseMs ?? 0);
+      }
+      const results = await Promise.all(
+        batch.map((url) =>
+          Promise.all(
+            options.viewports.map((viewport) => auditPage(url, viewport, session, sourceFor, demo)),
+          ),
+        ),
+      );
+
+      batch.forEach((url, pageIndex) => {
+        options.viewports.forEach((viewport, viewportIndex) => {
+          const attempt = results[pageIndex]?.[viewportIndex];
+          if (attempt === undefined) {
+            return;
+          }
+          const desktop = viewport === "desktop";
+          if (attempt.ok) {
+            pages.push({ url, viewport, ok: true, run: attempt.run });
+            if (!originFromRedirect) {
+              // Si la URL inicial redirige a otro host (p. ej. www.), los enlaces se resuelven contra el destino final.
+              origin = new URL(attempt.run.finalUrl).origin;
+              originFromRedirect = true;
+            }
+            if (desktop) {
+              linksByPage.set(url, attempt.run.links);
+            }
+            return;
+          }
+          const error = attempt.error;
+          pages.push({
+            url,
+            viewport,
+            ok: false,
             code: error.code,
             ...(error.httpStatus !== undefined ? { httpStatus: error.httpStatus } : {}),
+            message: error.message,
           });
-        }
-      }
-    }
+          if (desktop) {
+            failures.set(url, {
+              code: error.code,
+              ...(error.httpStatus !== undefined ? { httpStatus: error.httpStatus } : {}),
+            });
+          }
+        });
 
-    for (const href of linksByPage.get(url) ?? []) {
-      const next = normalizeLink(href, origin);
-      if (
-        next !== null &&
-        !visited.has(next) &&
-        !queue.includes(next) &&
-        visited.size + queue.length < options.maxPages
-      ) {
-        queue.push(next);
-      }
+        for (const href of linksByPage.get(url) ?? []) {
+          const next = normalizeLink(href, origin);
+          if (
+            next !== null &&
+            !visited.has(next) &&
+            !queue.includes(next) &&
+            visited.size + queue.length < options.maxPages
+          ) {
+            queue.push(next);
+          }
+        }
+      });
     }
+  } finally {
+    await session.close();
   }
 
   const brokenLinks = new Map<string, { href: string; status: number }[]>();

@@ -3,11 +3,18 @@ import { createServer as createHttpServer, request as httpRequest, type Server }
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BLOCKED_HEADER, startEgressProxy, type EgressProxy } from "./egressProxy.js";
 
+/** Cabecera de credenciales del proxy de salida, como la envía Chromium tras el reto 407. */
+function authOf(p: EgressProxy): string {
+  return `Proxy-Authorization: Basic ${Buffer.from(`${p.username}:${p.password}`).toString("base64")}`;
+}
+
+let credential = "";
+
 /** Envía una petición cruda al proxy y devuelve la línea de estado y las cabeceras. */
-function rawExchange(proxyPort: number, payload: string): Promise<string> {
+function rawExchange(proxyPort: number, payload: string, withAuth = true): Promise<string> {
   return new Promise((resolve, reject) => {
     const socket = netConnect({ host: "127.0.0.1", port: proxyPort }, () => {
-      socket.write(payload);
+      socket.write(withAuth ? payload.replace("\r\n", `\r\n${credential}\r\n`) : payload);
     });
     let data = "";
     socket.on("data", (chunk: Buffer) => {
@@ -49,6 +56,7 @@ beforeAll(async () => {
     trustedHosts: new Set(["permitido.example", "grande.example"]),
     maxBytes: 1024,
   });
+  credential = authOf(proxy);
 });
 
 afterAll(async () => {
@@ -70,7 +78,10 @@ describe("proxy de salida (protocolo y rechazos)", () => {
           port: proxy.port,
           method: "GET",
           path: `http://permitido.example:${String(upstreamPort)}/`,
-          headers: { host: `permitido.example:${String(upstreamPort)}` },
+          headers: {
+            host: `permitido.example:${String(upstreamPort)}`,
+            "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}`,
+          },
         },
         (response) => {
           let text = "";
@@ -96,7 +107,10 @@ describe("proxy de salida (protocolo y rechazos)", () => {
           port: proxy.port,
           method: "GET",
           path: `http://grande.example:${String(upstreamPort)}/grande`,
-          headers: { host: `grande.example:${String(upstreamPort)}` },
+          headers: {
+            host: `grande.example:${String(upstreamPort)}`,
+            "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}`,
+          },
         },
         (response) => {
           response.on("data", () => undefined);
@@ -117,6 +131,26 @@ describe("proxy de salida (protocolo y rechazos)", () => {
       request.end();
     });
     expect(proxy.events.tooLarge).toBe(true);
+  });
+
+  it("exige credenciales: sin ellas responde 407 y no toca la red", async () => {
+    const reply = await rawExchange(
+      proxy.port,
+      "GET http://permitido.example/ HTTP/1.1\r\nHost: permitido.example\r\nConnection: close\r\n\r\n",
+      false,
+    );
+    expect(reply).toContain("407");
+    expect(reply).toMatch(/proxy-authenticate: Basic/i);
+    expect(reply).not.toContain("hola desde el destino permitido");
+  });
+
+  it("rechaza un CONNECT sin credenciales con 407", async () => {
+    const reply = await rawExchange(
+      proxy.port,
+      "CONNECT permitido.example:443 HTTP/1.1\r\nHost: permitido.example\r\n\r\n",
+      false,
+    );
+    expect(reply).toContain("407 Proxy Authentication Required");
   });
 
   it("rechaza un esquema distinto de http en petición absoluta", async () => {
@@ -176,7 +210,7 @@ describe("proxy de salida (protocolo y rechazos)", () => {
       const echoed = await new Promise<string>((resolve, reject) => {
         const socket = netConnect({ host: "127.0.0.1", port: proxyWithTcp.port }, () => {
           socket.write(
-            `CONNECT eco.example:${String(tcpPort)} HTTP/1.1\r\nHost: eco.example\r\n\r\n`,
+            `CONNECT eco.example:${String(tcpPort)} HTTP/1.1\r\n${authOf(proxyWithTcp)}\r\nHost: eco.example\r\n\r\n`,
           );
         });
         let buffer = "";

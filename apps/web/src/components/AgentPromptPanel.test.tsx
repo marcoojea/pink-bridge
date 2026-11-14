@@ -55,10 +55,13 @@ describe("AgentPromptPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copiar instrucciones para el asistente" }));
 
     expect(
-      await screen.findByText(
-        "Este navegador no permite copiar al portapapeles. Descarga el archivo con el enlace de arriba.",
-      ),
+      await screen.findByText(/Este navegador no permite copiar al portapapeles/),
     ).toBeTruthy();
+    const text = screen.getByRole<HTMLTextAreaElement>("textbox", {
+      name: "Instrucciones para el asistente",
+    });
+    expect(text.value).toBe(MARKDOWN);
+    expect(text.readOnly).toBe(true);
   });
 
   it("muestra el error si el prompt no se puede obtener", async () => {

@@ -214,7 +214,7 @@ describe("demostración deshabilitada y recuperación", () => {
     }
   });
 
-  it("marca como fallidos los análisis que quedaron en cola tras un reinicio", async () => {
+  it("marca como fallidos los análisis que estaban en curso tras un reinicio", async () => {
     const store = new InMemoryAnalysisStore();
     const stale: AnalysisRecord = {
       id: randomUUID(),
@@ -226,7 +226,7 @@ describe("demostración deshabilitada y recuperación", () => {
       startedAt: null,
       finishedAt: null,
       durationMs: null,
-      status: "queued",
+      status: "running",
       stage: null,
       axeVersion: null,
       summary: null,
@@ -243,6 +243,46 @@ describe("demostración deshabilitada y recuperación", () => {
       const after = await restarted.service.get(stale.id);
       expect(after?.status).toBe("failed");
       expect(after?.errorCode).toBe("interrupted");
+    } finally {
+      await restarted.app.close();
+    }
+  });
+
+  it("retoma desde la cola los análisis que nunca llegaron a empezar", async () => {
+    const store = new InMemoryAnalysisStore();
+    const queued: AnalysisRecord = {
+      id: randomUUID(),
+      url: "https://example.com/",
+      normalizedUrl: "https://example.com/",
+      source: "url",
+      submissionToken: randomUUID(),
+      createdAt: "2026-11-12T10:00:00.000Z",
+      startedAt: null,
+      finishedAt: null,
+      durationMs: null,
+      status: "queued",
+      stage: null,
+      axeVersion: null,
+      summary: null,
+      errorCode: null,
+      errorMessage: null,
+    };
+    await store.insertAnalysis(queued);
+
+    // El runner falla a propósito: basta con comprobar que el análisis se ejecutó de nuevo.
+    const restarted = createPinkBridge({
+      store,
+      service: {
+        runner: () => Promise.reject(new Error("prueba de reanudación")),
+      },
+    });
+    await restarted.app.ready();
+    try {
+      expect(await restarted.service.recoverInterrupted()).toBe(0);
+      await restarted.service.drain();
+      const after = await restarted.service.get(queued.id);
+      expect(after?.status).toBe("failed");
+      expect(after?.errorCode).not.toBe("interrupted");
     } finally {
       await restarted.app.close();
     }

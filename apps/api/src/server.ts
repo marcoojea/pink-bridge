@@ -33,15 +33,29 @@ const demoAvailable = demoRequested && existsSync(demoFixturePath);
 
 const demoSiteRoot = fileURLToPath(new URL("../../../tests/fixtures/site", import.meta.url));
 
+// Token opcional para toda la API (salvo /api/health). Si se define, debe tener al menos 16 caracteres.
+const apiToken = process.env.PINK_BRIDGE_TOKEN;
+if (apiToken !== undefined && apiToken.length > 0 && apiToken.length < 16) {
+  throw new Error("PINK_BRIDGE_TOKEN debe tener al menos 16 caracteres.");
+}
+const createPerMinute = Number(process.env.PINK_BRIDGE_CREATE_PER_MINUTE ?? 10);
+if (!Number.isInteger(createPerMinute) || createPerMinute < 1) {
+  throw new Error("PINK_BRIDGE_CREATE_PER_MINUTE debe ser un entero positivo.");
+}
+
 const { app, service } = createPinkBridge({
   logger: true,
   store,
   service: demoAvailable ? { demoFixturePath, demoSiteRoot } : {},
+  security: {
+    createPerMinute,
+    ...(apiToken ? { apiToken } : {}),
+  },
 });
 
-const recovered = await service.recoverInterrupted();
-if (recovered > 0) {
-  app.log.warn({ recovered }, "Análisis interrumpidos marcados como fallidos");
+const failedOnRestart = await service.recoverInterrupted();
+if (failedOnRestart > 0) {
+  app.log.warn({ failedOnRestart }, "Análisis interrumpidos marcados como fallidos");
 }
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {

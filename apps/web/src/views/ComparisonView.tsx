@@ -53,20 +53,18 @@ export function ComparisonView({ from, to }: { readonly from: string; readonly t
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    compareAnalyses(from, to)
+    const controller = new AbortController();
+    compareAnalyses(from, to, controller.signal)
       .then((value) => {
-        if (!cancelled) {
-          setResult(value);
-        }
+        setResult(value);
       })
       .catch((caught: unknown) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setError(messageOf(caught));
         }
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [from, to]);
 
