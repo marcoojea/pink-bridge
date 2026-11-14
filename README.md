@@ -2,6 +2,27 @@
 
 [![CI](https://github.com/marcoojea/pink-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/marcoojea/pink-bridge/actions/workflows/ci.yml) [![Auditoría de accesibilidad](https://github.com/marcoojea/pink-bridge/actions/workflows/a11y-demo.yml/badge.svg)](https://github.com/marcoojea/pink-bridge/actions/workflows/a11y-demo.yml) ![Node 24](https://img.shields.io/badge/node-24-339933) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6) [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 
+## In English
+
+Pink Bridge checks web pages for accessibility problems and tells you what changed since the last check. It opens the page in an isolated Chromium with Playwright, runs axe-core, and compares each run with the previous one: new, resolved and persistent issues.
+
+- **Who it is for:** development and QA teams with a live site that cannot fix every problem at once.
+- **Try it:** the [read-only demo with sample data](https://marcoojea.github.io/pink-bridge/) needs no install. Locally, `docker compose up --build` serves it at http://127.0.0.1:8080.
+- **CI:** the CLI `npm run cli -- audit` compares a page with a baseline file kept in git, and exits with code 1 only when new serious or critical issues appear. See [Usarlo en tu CI](#usarlo-en-tu-ci) below.
+- **Stack:** TypeScript (strict), React 19 and Vite, Fastify 5, SQLite (better-sqlite3), Zod as the shared contract, Playwright, axe-core, Vitest, ESLint, Docker and GitHub Actions.
+- **Security:** URL validation, a destination guard on every connection, an isolated browser with per-session proxy credentials, and size and time limits. There is no user authentication, so it is meant for local or internal use.
+- **Limits:** axe-core does not catch every problem, a resolved issue is not verified as fixed, and only public pages without login are supported.
+
+![Results with filters](docs/img/02-resultados-filtrados.png)
+
+![Comparison of two runs](docs/img/04-comparacion.png)
+
+![Demo flow](docs/img/flujo.gif)
+
+---
+
+## Versión en español
+
 Plataforma de auditoría de accesibilidad web y generación de informes QA. Analiza una URL en un navegador aislado con axe-core, separa las incidencias automáticas de las comprobaciones que requieren revisión manual, guarda cada ejecución y permite revisar, exportar y comparar.
 
 > **Alcance actual:** una URL o un sitio acotado por `maxPages` en el mismo dominio. Sin autenticación ni cuotas: es una herramienta de uso local o interno. Ver [Limitaciones](#limitaciones-y-riesgos-residuales).
