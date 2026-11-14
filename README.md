@@ -1,5 +1,7 @@
 # Pink Bridge
 
+[![CI](https://github.com/marcoojea/pink-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/marcoojea/pink-bridge/actions/workflows/ci.yml) [![Auditoría de accesibilidad](https://github.com/marcoojea/pink-bridge/actions/workflows/a11y-demo.yml/badge.svg)](https://github.com/marcoojea/pink-bridge/actions/workflows/a11y-demo.yml) ![Node 24](https://img.shields.io/badge/node-24-339933) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6) [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
+
 Plataforma de auditoría de accesibilidad web y generación de informes QA. Analiza una URL en un navegador aislado con axe-core, separa las incidencias automáticas de las comprobaciones que requieren revisión manual, guarda cada ejecución y permite revisar, exportar y comparar.
 
 > **Alcance actual:** una URL o un sitio acotado por `maxPages` en el mismo dominio. Sin autenticación ni cuotas: es una herramienta de uso local o interno. Ver [Limitaciones](#limitaciones-y-riesgos-residuales).
@@ -66,16 +68,17 @@ npm run dev:web                             # Interfaz en http://127.0.0.1:5173 
 
 ## Comandos
 
-| Comando                    | Qué hace                                                            |
-| -------------------------- | ------------------------------------------------------------------- |
-| `npm run lint`             | ESLint sobre todo el repositorio                                    |
-| `npm run format:check`     | Prettier en modo comprobación                                       |
-| `npm run typecheck`        | `tsc` en shared, API, interfaz y configs de Playwright              |
-| `npm run test:unit`        | Vitest: `@pink-bridge/shared`, lógica pura de la API y la interfaz  |
-| `npm run test:integration` | Vitest con cobertura: API, motor con Chromium, proxy y persistencia |
-| `npm run test:e2e`         | Playwright en escritorio y móvil, con servidores automáticos        |
-| `npm run audit`            | `npm audit` con umbral `high`                                       |
-| `npm run build`            | Compila shared, API (`dist/`) e interfaz (`dist/`)                  |
+| Comando                      | Qué hace                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------- |
+| `npm run lint`               | ESLint sobre todo el repositorio                                                          |
+| `npm run format:check`       | Prettier en modo comprobación                                                             |
+| `npm run typecheck`          | `tsc` en shared, API, interfaz y configs de Playwright                                    |
+| `npm run test:unit`          | Vitest: `@pink-bridge/shared`, lógica pura de la API y la interfaz                        |
+| `npm run test:integration`   | Vitest con cobertura: API, motor con Chromium, proxy y persistencia                       |
+| `npm run test:e2e`           | Playwright en escritorio y móvil, con servidores automáticos                              |
+| `npm run audit`              | `npm audit` con umbral `high`                                                             |
+| `npm run cli -- audit <url>` | Auditoría para CI: línea base, `--fail-on-new` y código de salida (ver «Usarlo en tu CI») |
+| `npm run build`              | Compila shared, API (`dist/`) e interfaz (`dist/`)                                        |
 
 Umbrales de cobertura (fallan el comando si no se cumplen): líneas y sentencias 90 %, funciones 90 %, ramas 80 %.
 
@@ -149,6 +152,74 @@ docs/
 - **Enlaces rotos.** Solo se detectan entre las páginas visitadas por el recorrido.
 - **Pruebas de CI.** El workflow de GitHub Actions ha pasado en verde en GitHub en `d93d42b`; los mismos comandos se han ejecutado en local.
 
+## Usarlo en tu CI
+
+El CLI audita una página o un sitio sin arrancar la interfaz, compara el resultado con una línea base guardada en git y sale con código distinto de 0 si aparecen incidencias nuevas. Así una pull request puede fallar si introduce problemas de accesibilidad.
+
+### Ejemplo copiable
+
+```yaml
+- run: npm ci
+- run: npx playwright install --with-deps chromium
+- name: Auditar frente a la línea base
+  run: >
+    npm run cli -- audit https://preproduccion.tu-web.example
+    --baseline .github/a11y/baseline.json
+    --fail-on-new --min-impact serious
+    --report a11y-report
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: a11y-report
+    path: a11y-report/
+```
+
+La versión completa está en [`.github/workflows/a11y-audit.example.yml`](.github/workflows/a11y-audit.example.yml). El workflow [`a11y-demo.yml`](.github/workflows/a11y-demo.yml) hace lo mismo contra el sitio de demostración del repositorio, sin red ni secretos.
+
+### Línea base
+
+La línea base es un JSON con las incidencias de una auditoría: regla, gravedad, página, tamaño y huellas. No guarda HTML, texto de la página ni nodos, así que puede versionarse en git sin exponer contenido.
+
+- Créala con `--write-baseline <archivo>` y actualízala a propósito, en una rama, cuando la web cambie a propósito.
+- Cada incidencia se empareja primero por huella fuerte (mismo selector y fragmento) y después por huella débil (misma regla y fragmento).
+- Una línea base solo sirve para la misma dirección y el mismo modo (página o sitio). Si no coinciden, el CLI sale con código 2.
+
+### Opciones principales
+
+| Opción                       | Qué hace                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------ |
+| `--baseline <archivo>`       | Compara con la línea base.                                                                 |
+| `--write-baseline <archivo>` | Guarda el resultado como nueva línea base.                                                 |
+| `--fail-on-new`              | Sale con código 1 si hay nuevas incidencias con la gravedad mínima. Requiere `--baseline`. |
+| `--min-impact <gravedad>`    | `critical`, `serious`, `moderate` o `minor`. Por defecto, `serious`.                       |
+| `--include-review`           | Incluye las comprobaciones de revisión manual. Por defecto, no.                            |
+| `--report <carpeta>`         | Escribe `report.html` y `report.json`.                                                     |
+| `--max-pages <1-10>`         | Revisa varias páginas del mismo sitio. Por defecto, 1.                                     |
+| `--pause-ms <0-10000>`       | Pausa entre páginas. Por defecto, 500 ms.                                                  |
+| `--demo-site`                | Audita el sitio de demostración del repositorio, sin red.                                  |
+
+### Códigos de salida
+
+| Código | Significado                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------- |
+| 0      | Auditoría completada, sin nuevas incidencias que fallen.                                          |
+| 1      | Hay nuevas incidencias con gravedad igual o superior a `--min-impact` (solo con `--fail-on-new`). |
+| 2      | Uso incorrecto o línea base no válida.                                                            |
+| 3      | La auditoría no se pudo completar. Nunca equivale a «sin incidencias».                            |
+
+### Límites de esta función
+
+- **Solo páginas públicas.** El CLI no inicia sesión ni recibe cookies. Para una web con acceso restringido hace falta un entorno de preproducción accesible sin login.
+- **Sin localhost ni redes privadas.** El guardia SSRF se mantiene igual que en la API: no hay opción para saltárselo. Para probar en el mismo runner, usa `--demo-site` o una URL de preproducción pública.
+- **Límites de tasa.** Como máximo 10 páginas y una pausa mínima entre lotes de páginas, configurable con `--pause-ms`.
+- **Mismo alcance que la API.** Solo se detectan los problemas que axe-core y las sondas detectan. Una incidencia «resuelta» no está verificada como corregida.
+- **Revisión manual fuera por defecto.** Las comprobaciones que requieren una persona no bloquean el CI salvo con `--include-review`.
+- **No publicado todavía.** El CLI se ejecuta desde este repositorio con `npm run cli`; no hay paquete en npm.
+
 ## Documentación
 
 - [Catálogo del fixture de demostración](docs/fixture-catalog.md)
+- [Contribuir](CONTRIBUTING.md)
+- [Política de seguridad](SECURITY.md)
+- [Registro de cambios](CHANGELOG.md)
+- [Licencia MIT](LICENSE)
