@@ -33,10 +33,12 @@ describe("CompareForm", () => {
     ];
     render(<CompareForm items={items} />);
 
-    const target = screen.getByLabelText<HTMLSelectElement>("Análisis a comparar");
+    const target = screen.getByLabelText<HTMLSelectElement>("Segunda revisión (la más reciente)");
     expect(target.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText("Análisis base"), { target: { value: A } });
+    fireEvent.change(screen.getByLabelText("Primera revisión (la más antigua)"), {
+      target: { value: A },
+    });
     const options = within(target)
       .getAllByRole("option")
       .map((option) => (option as HTMLOptionElement).value);
@@ -54,8 +56,12 @@ describe("CompareForm", () => {
     const button = screen.getByRole<HTMLButtonElement>("button", { name: "Comparar" });
     expect(button.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText("Análisis base"), { target: { value: A } });
-    fireEvent.change(screen.getByLabelText("Análisis a comparar"), { target: { value: B } });
+    fireEvent.change(screen.getByLabelText("Primera revisión (la más antigua)"), {
+      target: { value: A },
+    });
+    fireEvent.change(screen.getByLabelText("Segunda revisión (la más reciente)"), {
+      target: { value: B },
+    });
     expect(button.disabled).toBe(false);
 
     fireEvent.click(button);

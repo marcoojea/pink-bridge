@@ -12,9 +12,9 @@ async function expectNoAxeViolations(page: Page): Promise<void> {
 
 async function runDemo(page: Page): Promise<void> {
   await page.goto("/#/");
-  await page.getByRole("button", { name: "Probar con la página de demostración" }).click();
+  await page.getByRole("button", { name: "Ver un ejemplo de página" }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Resultados del análisis" }),
+    page.getByRole("heading", { level: 1, name: "Resultados de la revisión" }),
   ).toBeVisible({
     timeout: 60_000,
   });
@@ -24,16 +24,22 @@ test("el formulario valida la dirección y enfoca el campo con un mensaje asocia
   page,
 }) => {
   await page.goto("/#/");
-  await page.getByRole("button", { name: "Analizar" }).click();
+  await page.getByRole("button", { name: "Revisar la página" }).click();
 
-  const input = page.getByLabel("Dirección web");
+  const input = page.getByLabel("Dirección de la página");
   await expect(input).toBeFocused();
   await expect(input).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText("Introduce una dirección web.")).toBeVisible();
+  await expect(
+    page.getByText("Escribe la dirección de la página que quieres revisar."),
+  ).toBeVisible();
 
   await input.fill("ftp://ejemplo.com");
-  await page.getByRole("button", { name: "Analizar" }).click();
-  await expect(page.getByText("Solo se admiten direcciones http o https.")).toBeVisible();
+  await page.getByRole("button", { name: "Revisar la página" }).click();
+  await expect(
+    page.getByText(
+      "Solo se pueden revisar páginas web. La dirección debe empezar por https:// o http://",
+    ),
+  ).toBeVisible();
 });
 
 test("el enlace de salto aparece con el teclado y lleva al contenido", async ({ page }) => {
@@ -51,50 +57,52 @@ test("una URL que resuelve a loopback se bloquea y se informa como fallo, no com
   page,
 }) => {
   await page.goto("/#/");
-  await page.getByLabel("Dirección web").fill("http://127.0.0.1/");
-  await page.getByRole("button", { name: "Analizar" }).click();
+  await page.getByLabel("Dirección de la página").fill("http://127.0.0.1/");
+  await page.getByRole("button", { name: "Revisar la página" }).click();
 
   await expect(
-    page.getByRole("heading", { level: 1, name: "No se pudo completar el análisis" }),
+    page.getByRole("heading", { level: 1, name: "No se pudo terminar la revisión" }),
   ).toBeVisible({
     timeout: 60_000,
   });
   await expect(page.getByRole("alert")).toHaveText("El destino no está permitido.");
-  await expect(page.getByText(/no se ha comprobado/)).toBeVisible();
+  await expect(page.getByText(/no se ha podido comprobar/)).toBeVisible();
 });
 
 test("la demostración muestra progreso, resultados filtrables y detalle", async ({ page }) => {
   await page.goto("/#/");
-  await page.getByRole("button", { name: "Probar con la página de demostración" }).click();
+  await page.getByRole("button", { name: "Ver un ejemplo de página" }).click();
 
-  await expect(page.getByRole("heading", { level: 1, name: "Analizando la página" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Resultados del análisis" }),
+    page.getByRole("heading", { level: 1, name: "Estamos revisando la página" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Resultados de la revisión" }),
   ).toBeVisible({
     timeout: 60_000,
   });
 
-  await expect(page.getByText("Mostrando 5 de 5 incidencias.")).toBeVisible();
+  await expect(page.getByText("Mostrando 5 problemas de 5 problemas.")).toBeVisible();
 
   await page.getByLabel("Gravedad").selectOption("critical");
-  await expect(page.getByText("Mostrando 2 de 5 incidencias.")).toBeVisible();
+  await expect(page.getByText("Mostrando 2 problemas de 5 problemas.")).toBeVisible();
   await page.getByLabel("Gravedad").selectOption("");
 
-  await page.getByLabel("Tipo").selectOption("needs_review");
-  await expect(page.getByText("No hay incidencias que coincidan con los filtros.")).toBeVisible();
+  await page.getByLabel("Tipo de problema").selectOption("needs_review");
+  await expect(page.getByText("No hay problemas que coincidan con estos filtros.")).toBeVisible();
   await page.getByRole("button", { name: "Quitar filtros" }).click();
 
-  await page.getByRole("button", { name: "Ver detalle de image-alt" }).click();
-  const detail = page.getByRole("region", { name: "Detalle: image-alt" });
+  await page.getByRole("button", { name: "Ver cómo arreglarlo: Imagen sin descripción" }).click();
+  const detail = page.getByRole("region", { name: "Cómo arreglar: Imagen sin descripción" });
   await expect(detail).toBeFocused();
-  await expect(detail.getByText("Criterio de referencia")).toBeVisible();
-  await expect(detail.getByText("WCAG 1.1.1")).toBeVisible();
+  await expect(detail.getByText("Norma WCAG relacionada")).toBeVisible();
+  await expect(detail.getByText(/WCAG 1\.1\.1/)).toBeVisible();
 });
 
 test("los resultados avisan de que la revisión manual no está aprobada", async ({ page }) => {
   await runDemo(page);
-  await expect(page.getByText(/no están aprobadas/)).toBeVisible();
-  await expect(page.getByText(/no certifica la conformidad WCAG/)).toBeVisible();
+  await expect(page.getByText(/Pink Bridge ayuda a encontrar problemas/)).toBeVisible();
+  await expect(page.getByText(/certifica que la página cumpla WCAG/)).toBeVisible();
 });
 
 test("el histórico conserva los análisis y repetir uno crea otro nuevo", async ({ page }) => {
@@ -102,19 +110,17 @@ test("el histórico conserva los análisis y repetir uno crea otro nuevo", async
   const firstUrl = page.url();
 
   await page.goto("/#/historial");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Histórico de análisis" }),
-  ).toBeFocused();
+  await expect(page.getByRole("heading", { level: 1, name: "Mis revisiones" })).toBeFocused();
   await expect(
     page.getByRole("link", { name: "https://demo.pinkbridge.test/" }).first(),
   ).toBeVisible();
 
   await page
-    .getByRole("button", { name: "Repetir análisis de https://demo.pinkbridge.test/" })
+    .getByRole("button", { name: "Repetir revisión de https://demo.pinkbridge.test/" })
     .first()
     .click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Resultados del análisis" }),
+    page.getByRole("heading", { level: 1, name: "Resultados de la revisión" }),
   ).toBeVisible({
     timeout: 60_000,
   });
@@ -139,9 +145,7 @@ test("la portada, el histórico y un resultado no tienen incidencias axe en WCAG
   await expectNoAxeViolations(page);
 
   await page.goto("/#/historial");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Histórico de análisis" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Mis revisiones" })).toBeVisible();
   await expectNoAxeViolations(page);
 
   await runDemo(page);
@@ -150,7 +154,9 @@ test("la portada, el histórico y un resultado no tienen incidencias axe en WCAG
 
 test("una ruta desconocida muestra una página de no encontrada accesible", async ({ page }) => {
   await page.goto("/#/no-existe");
-  await expect(page.getByRole("heading", { level: 1, name: "Página no encontrada" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "No encontramos esta página" }),
+  ).toBeVisible();
   await expectNoAxeViolations(page);
 });
 
@@ -158,27 +164,27 @@ test("revisar una incidencia guarda la nota y dos ejecuciones se comparan desde 
   page,
 }) => {
   await runDemo(page);
-  await expect(page.getByRole("link", { name: "Descargar informe JSON" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Datos completos (JSON)" })).toHaveAttribute(
     "download",
     "",
   );
 
-  await page.getByRole("button", { name: "Ver detalle de image-alt" }).click();
-  const detail = page.getByRole("region", { name: "Detalle: image-alt" });
-  await detail.getByLabel("Estado").selectOption("reviewed");
+  await page.getByRole("button", { name: "Ver cómo arreglarlo: Imagen sin descripción" }).click();
+  const detail = page.getByRole("region", { name: "Cómo arreglar: Imagen sin descripción" });
+  await detail.getByLabel("¿En qué punto estás?").selectOption("reviewed");
   await detail.getByLabel("Nota (opcional)").fill("Revisada en QA");
-  await detail.getByRole("button", { name: "Guardar revisión" }).click();
-  await expect(detail.getByRole("status")).toHaveText("Revisión guardada.");
-  await expect(detail.getByText("Estado de revisión: Revisada")).toBeVisible();
+  await detail.getByRole("button", { name: "Guardar mi seguimiento" }).click();
+  await expect(detail.getByRole("status")).toHaveText("Tu seguimiento está guardado.");
+  await expect(detail.getByText("Tu revisión: Revisado")).toBeVisible();
 
   await runDemo(page);
   await page.goto("/#/historial");
-  const baseSelect = page.getByLabel("Análisis base");
+  const baseSelect = page.getByLabel("Primera revisión (la más antigua)");
   await baseSelect.selectOption({ index: 1 });
   const baseValue = await baseSelect.inputValue();
 
   // El destino debe ser un análisis distinto de la base: se elige por valor, no por posición.
-  const targetSelect = page.getByLabel("Análisis a comparar");
+  const targetSelect = page.getByLabel("Segunda revisión (la más reciente)");
   const optionLocators = await targetSelect.locator("option").all();
   const values = await Promise.all(optionLocators.map((option) => option.getAttribute("value")));
   const targetValue = values.find(
@@ -188,10 +194,8 @@ test("revisar una incidencia guarda la nota y dos ejecuciones se comparan desde 
   await targetSelect.selectOption(targetValue ?? "");
   await page.getByRole("button", { name: "Comparar", exact: true }).click();
 
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Comparación de análisis" }),
-  ).toBeVisible();
-  await expect(page.getByText("Coincidencia exacta").first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Qué ha cambiado" })).toBeVisible();
+  await expect(page.getByText("Mismo problema, misma parte de la página").first()).toBeVisible();
   await expectNoAxeViolations(page);
 });
 
@@ -214,33 +218,33 @@ test("sin desplazamiento horizontal a 320 px en portada y resultados", async ({ 
 
 test("el formulario de revisión se recorre completo con teclado", async ({ page }) => {
   await runDemo(page);
-  await page.getByRole("button", { name: "Ver detalle de image-alt" }).focus();
+  await page.getByRole("button", { name: "Ver cómo arreglarlo: Imagen sin descripción" }).focus();
   await page.keyboard.press("Enter");
 
-  const detail = page.getByRole("region", { name: "Detalle: image-alt" });
+  const detail = page.getByRole("region", { name: "Cómo arreglar: Imagen sin descripción" });
   await expect(detail).toBeFocused();
-  await detail.getByLabel("Estado").focus();
+  await detail.getByLabel("¿En qué punto estás?").focus();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Tab");
   await expect(detail.getByLabel("Nota (opcional)")).toBeFocused();
   await page.keyboard.type("Revisado con teclado");
   await page.keyboard.press("Tab");
-  await expect(detail.getByRole("button", { name: "Guardar revisión" })).toBeFocused();
+  await expect(detail.getByRole("button", { name: "Guardar mi seguimiento" })).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(detail.getByRole("status")).toHaveText("Revisión guardada.");
+  await expect(detail.getByRole("status")).toHaveText("Tu seguimiento está guardado.");
 });
 
 test("el recorrido de sitio muestra el resumen con páginas auditadas", async ({ page }) => {
   test.setTimeout(240_000);
   await page.goto("/#/");
-  await page.getByRole("button", { name: "Probar el recorrido de sitio" }).click();
+  await page.getByRole("button", { name: "Ver un ejemplo de sitio" }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Resultados del análisis" }),
+    page.getByRole("heading", { level: 1, name: "Resultados de la revisión" }),
   ).toBeVisible({
     timeout: 220_000,
   });
-  await expect(page.getByText("Incidencias automáticas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Problemas automáticos", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Prompt para Claude Code o Codex (Markdown)" }),
+    page.getByRole("link", { name: "Instrucciones para un asistente de programación (Markdown)" }),
   ).toBeVisible();
 });

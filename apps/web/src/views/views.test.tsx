@@ -31,9 +31,13 @@ describe("localUrlError", () => {
   it("acepta http y https y rechaza lo demás antes de llamar a la API", () => {
     expect(localUrlError("https://ejemplo.com")).toBeNull();
     expect(localUrlError("http://ejemplo.com/ruta")).toBeNull();
-    expect(localUrlError("   ")).toBe("Introduce una dirección web.");
-    expect(localUrlError("ejemplo")).toBe("La dirección no tiene un formato válido.");
-    expect(localUrlError("ftp://ejemplo.com")).toBe("Solo se admiten direcciones http o https.");
+    expect(localUrlError("   ")).toBe("Escribe la dirección de la página que quieres revisar.");
+    expect(localUrlError("ejemplo")).toBe(
+      "Esto no parece una dirección web. Empieza por https:// y escribe el resto, por ejemplo https://ejemplo.com",
+    );
+    expect(localUrlError("ftp://ejemplo.com")).toBe(
+      "Solo se pueden revisar páginas web. La dirección debe empezar por https:// o http://",
+    );
   });
 });
 
@@ -41,10 +45,10 @@ describe("Inicio", () => {
   it("muestra el título, el formulario y el histórico", () => {
     render(<App />);
     expect(
-      screen.getByRole("heading", { level: 1, name: "Analiza la accesibilidad de una página" }),
+      screen.getByRole("heading", { level: 1, name: "Revisa si tu página web es accesible" }),
     ).toBeTruthy();
-    expect(screen.getByLabelText("Dirección web")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Ver el histórico de análisis" })).toBeTruthy();
+    expect(screen.getByLabelText("Dirección de la página")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver mis revisiones anteriores" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Saltar al contenido" })).toBeTruthy();
   });
 
@@ -52,12 +56,18 @@ describe("Inicio", () => {
     const mock = stubFetch(() => ({ status: 500, body: {} }));
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("Dirección web"), { target: { value: "no-valida" } });
-    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    fireEvent.change(screen.getByLabelText("Dirección de la página"), {
+      target: { value: "no-valida" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Revisar la página" }));
 
-    const input = screen.getByLabelText("Dirección web");
+    const input = screen.getByLabelText("Dirección de la página");
     expect(input.getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByText("La dirección no tiene un formato válido.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Esto no parece una dirección web. Empieza por https:// y escribe el resto, por ejemplo https://ejemplo.com",
+      ),
+    ).toBeTruthy();
     expect(mock).not.toHaveBeenCalled();
   });
 
@@ -70,10 +80,10 @@ describe("Inicio", () => {
     });
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("Dirección web"), {
+    fireEvent.change(screen.getByLabelText("Dirección de la página"), {
       target: { value: "https://ejemplo.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar la página" }));
 
     await waitFor(() => {
       expect(window.location.hash).toBe(`#/analisis/${ANALYSIS_ID}`);
@@ -93,10 +103,10 @@ describe("Inicio", () => {
     }));
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("Dirección web"), {
+    fireEvent.change(screen.getByLabelText("Dirección de la página"), {
       target: { value: "https://ejemplo.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar la página" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe("El destino no está permitido.");
   });
@@ -105,7 +115,7 @@ describe("Inicio", () => {
     const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ source: "demo" }) }));
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Probar con la página de demostración" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver un ejemplo de página" }));
 
     await waitFor(() => {
       expect(mock).toHaveBeenCalledTimes(1);
@@ -142,20 +152,22 @@ describe("Análisis", () => {
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toBe("Cargando la página");
     });
-    expect(screen.getByRole("heading", { level: 1, name: "Analizando la página" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Estamos revisando la página" }),
+    ).toBeTruthy();
     const currentStep = document.querySelector('li[aria-current="step"]');
     expect(currentStep?.textContent).toContain("Cargando la página");
 
     expect(
       await screen.findByRole(
         "heading",
-        { level: 1, name: "Resultados del análisis" },
+        { level: 1, name: "Resultados de la revisión" },
         { timeout: 4000 },
       ),
     ).toBeTruthy();
-    expect(
-      screen.getByText("Comprobaciones superadas por axe").nextElementSibling?.textContent,
-    ).toBe("12");
+    expect(screen.getByText("Comprobaciones que sí superó").nextElementSibling?.textContent).toBe(
+      "12",
+    );
   }, 10000);
 
   it("muestra el fallo con su código y sin presentarlo como ausencia de incidencias", async () => {
@@ -172,11 +184,11 @@ describe("Análisis", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "No se pudo completar el análisis" }),
+      await screen.findByRole("heading", { level: 1, name: "No se pudo terminar la revisión" }),
     ).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toBe("La página tardó demasiado en cargar.");
     expect(screen.getByText("navigation_timeout")).toBeTruthy();
-    expect(screen.getByText(/no se ha comprobado/)).toBeTruthy();
+    expect(screen.getByText(/no se ha podido comprobar/)).toBeTruthy();
   });
 
   it("informa de un identificador inexistente con un error legible", async () => {
@@ -226,23 +238,31 @@ describe("Análisis", () => {
     window.location.hash = `#/analisis/${ANALYSIS_ID}`;
     render(<App />);
 
-    expect(await screen.findByText("Mostrando 2 de 2 incidencias.")).toBeTruthy();
+    expect(await screen.findByText("Mostrando 2 problemas de 2 problemas.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Gravedad"), { target: { value: "critical" } });
-    expect(screen.getByText("Mostrando 1 de 2 incidencias.")).toBeTruthy();
+    expect(screen.getByText("Mostrando 1 problema de 2 problemas.")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Gravedad"), { target: { value: "serious" } });
-    expect(screen.getByText("No hay incidencias que coincidan con los filtros.")).toBeTruthy();
+    expect(screen.getByText("No hay problemas que coincidan con estos filtros.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Quitar filtros" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Ver detalle de image-alt" }));
-    const detail = screen.getByRole("region", { name: "Detalle: image-alt" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver cómo arreglarlo: Imagen sin descripción" }),
+    );
+    const detail = screen.getByRole("region", { name: "Cómo arreglar: Imagen sin descripción" });
     expect(within(detail).getByText("Una imagen no tiene texto alternativo.")).toBeTruthy();
     expect(within(detail).getByText("img.logo")).toBeTruthy();
-    expect(within(detail).getByText("WCAG 1.1.1")).toBeTruthy();
+    expect(within(detail).getByText(/WCAG 1\.1\.1/)).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ver detalle de focus-order-semantics" }));
-    const reviewDetail = screen.getByRole("region", { name: "Detalle: focus-order-semantics" });
-    expect(within(reviewDetail).getByText(/requiere revisión manual/)).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Ver cómo arreglarlo: Regla técnica focus-order-semantics",
+      }),
+    );
+    const reviewDetail = screen.getByRole("region", {
+      name: "Cómo arreglar: Regla técnica focus-order-semantics",
+    });
+    expect(within(reviewDetail).getByText(/no puede decidirlo sola/)).toBeTruthy();
     expect(within(reviewDetail).getByText(/buena práctica/)).toBeTruthy();
   });
 });
@@ -268,10 +288,10 @@ describe("Histórico", () => {
     render(<App />);
 
     expect(await screen.findByRole("link", { name: "https://ejemplo.com/" })).toBeTruthy();
-    expect(screen.getByText(/Fallido/)).toBeTruthy();
+    expect(screen.getByText(/No completada/)).toBeTruthy();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Repetir análisis de https://ejemplo.com/" }),
+      screen.getByRole("button", { name: "Repetir revisión de https://ejemplo.com/" }),
     );
     await waitFor(() => {
       expect(window.location.hash).toBe("#/analisis/11111111-1111-4111-8111-111111111111");
@@ -284,7 +304,7 @@ describe("Histórico", () => {
     stubFetch(() => ({ status: 200, body: { items: [], total: 0, limit: 20, offset: 0 } }));
     window.location.hash = "#/historial";
     render(<App />);
-    expect(await screen.findByText("Todavía no hay análisis.")).toBeTruthy();
+    expect(await screen.findByText("Todavía no has revisado ninguna página.")).toBeTruthy();
   });
 });
 
@@ -292,16 +312,16 @@ describe("Navegación", () => {
   it("muestra una página de no encontrada para rutas desconocidas", () => {
     window.location.hash = "#/no-existe";
     render(<App />);
-    expect(screen.getByRole("heading", { level: 1, name: "Página no encontrada" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "No encontramos esta página" }),
+    ).toBeTruthy();
   });
 
   it("reacciona al cambio de hash sin recargar", async () => {
     stubFetch(() => ({ status: 200, body: { items: [], total: 0, limit: 20, offset: 0 } }));
     render(<App />);
     window.location.hash = "#/historial";
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Histórico de análisis" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "Mis revisiones" })).toBeTruthy();
   });
 });
 
@@ -310,10 +330,10 @@ describe("Inicio: recorrido de sitio", () => {
     const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ id: ANALYSIS_ID }) }));
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("Dirección web"), {
+    fireEvent.change(screen.getByLabelText("Dirección de la página"), {
       target: { value: "https://ejemplo.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar la página" }));
     await waitFor(() => {
       expect(mock).toHaveBeenCalledTimes(1);
     });
@@ -324,18 +344,18 @@ describe("Inicio: recorrido de sitio", () => {
     const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ id: ANALYSIS_ID }) }));
     render(<App />);
 
-    fireEvent.click(screen.getByLabelText(/Recorrer el sitio/));
-    const pages = screen.getByLabelText<HTMLInputElement>(/Máximo de páginas/);
+    fireEvent.click(screen.getByLabelText(/Varias páginas del mismo sitio/));
+    const pages = screen.getByLabelText<HTMLInputElement>(/Número máximo de páginas/);
     fireEvent.change(pages, { target: { value: "99" } });
     expect(pages.value).toBe("10");
     fireEvent.change(pages, { target: { value: "0" } });
     expect(pages.value).toBe("1");
 
     fireEvent.change(pages, { target: { value: "4" } });
-    fireEvent.change(screen.getByLabelText("Dirección web"), {
+    fireEvent.change(screen.getByLabelText("Dirección de la página"), {
       target: { value: "https://ejemplo.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Analizar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revisar el sitio" }));
     await waitFor(() => {
       expect(mock).toHaveBeenCalledTimes(1);
     });
@@ -345,7 +365,7 @@ describe("Inicio: recorrido de sitio", () => {
   it("lanza el recorrido del demo de sitio con target demo-site", async () => {
     const mock = stubFetch(() => ({ status: 202, body: makeAnalysis({ source: "demo" }) }));
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Probar el recorrido de sitio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver un ejemplo de sitio" }));
     await waitFor(() => {
       expect(mock).toHaveBeenCalledTimes(1);
     });

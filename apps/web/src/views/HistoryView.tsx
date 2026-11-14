@@ -3,7 +3,7 @@ import type { Analysis } from "@pink-bridge/shared";
 import { createAnalysis, listAnalyses } from "../api/client.js";
 import { CompareForm } from "../components/CompareForm.js";
 import { analysisHref, navigateTo, routeHref } from "../router.js";
-import { formatDate, formatDuration, STATUS_LABELS } from "../labels.js";
+import { formatDate, formatDuration, pluralize, STATUS_LABELS } from "../labels.js";
 import { messageOf } from "./HomeView.js";
 
 const PAGE_SIZE = 20;
@@ -63,11 +63,14 @@ export function HistoryView() {
   return (
     <section aria-labelledby="titulo-historial" className="card stack">
       <h1 id="titulo-historial" tabIndex={-1} ref={headingRef}>
-        Histórico de análisis
+        Mis revisiones
       </h1>
-      <p>
-        Cada análisis se conserva por separado. Repetir una auditoría crea un análisis nuevo y no
-        sobrescribe el anterior.
+      <p className="lead">
+        Aquí queda guardada cada revisión que haces. Puedes abrir una, repetirla o comparar dos.
+      </p>
+      <p className="hint">
+        Repetir una revisión crea una nueva. La anterior no se modifica, así puedes ver cómo cambia
+        la página con el tiempo.
       </p>
 
       {error !== null && (
@@ -78,7 +81,7 @@ export function HistoryView() {
 
       {items === null && error === null && (
         <>
-          <p role="status">Cargando el histórico…</p>
+          <p role="status">Cargando tus revisiones…</p>
           <ul className="history-list" aria-hidden="true">
             {[0, 1, 2].map((row) => (
               <li key={row} className="skeleton-row" />
@@ -89,9 +92,9 @@ export function HistoryView() {
 
       {items !== null && items.length === 0 && (
         <div className="empty">
-          <p>Todavía no hay análisis.</p>
+          <p>Todavía no has revisado ninguna página.</p>
           <p>
-            <a href={routeHref("home")}>Analizar una página</a>
+            <a href={routeHref("home")}>Revisar mi primera página</a>
           </p>
         </div>
       )}
@@ -110,7 +113,15 @@ export function HistoryView() {
                   {formatDate(analysis.createdAt)} · {STATUS_LABELS[analysis.status]} ·{" "}
                   {formatDuration(analysis.durationMs)}
                   {analysis.summary !== null && (
-                    <> · {analysis.summary.automaticFindings} incidencias automáticas</>
+                    <>
+                      {" "}
+                      ·{" "}
+                      {pluralize(
+                        analysis.summary.automaticFindings,
+                        "problema automático",
+                        "problemas automáticos",
+                      )}
+                    </>
                   )}
                 </p>
               </div>
@@ -118,12 +129,12 @@ export function HistoryView() {
                 type="button"
                 className="secondary"
                 disabled={busyId !== null}
-                aria-label={`Repetir análisis de ${analysis.url}`}
+                aria-label={`Repetir revisión de ${analysis.url}`}
                 onClick={() => {
                   void repeat(analysis);
                 }}
               >
-                Repetir análisis
+                Repetir revisión
               </button>
             </li>
           ))}
@@ -131,7 +142,7 @@ export function HistoryView() {
       )}
 
       {items !== null && total > PAGE_SIZE && (
-        <nav aria-label="Paginación del histórico" className="pagination">
+        <nav aria-label="Páginas del historial" className="pagination">
           <button
             type="button"
             className="secondary"

@@ -1,16 +1,53 @@
 import { useEffect, useRef, useState } from "react";
-import type { Analysis } from "@pink-bridge/shared";
+import type { Analysis, AnalysisSummary } from "@pink-bridge/shared";
 import { getAnalysis } from "../api/client.js";
 import { AgentPromptPanel } from "../components/AgentPromptPanel.js";
 import { FindingsPanel } from "../components/FindingsPanel.js";
+import { Glossary } from "../components/Glossary.js";
 import { SummaryCards } from "../components/SummaryCards.js";
-import { formatDate, formatDuration, STAGE_LABELS, STAGE_ORDER, STATUS_LABELS } from "../labels.js";
+import {
+  formatDate,
+  formatDuration,
+  pluralize,
+  STAGE_LABELS,
+  STAGE_ORDER,
+  STATUS_LABELS,
+} from "../labels.js";
 import { messageOf } from "./HomeView.js";
 
 const POLL_MS = 1000;
 
 function isActive(analysis: Analysis): boolean {
   return analysis.status === "queued" || analysis.status === "running";
+}
+
+/** Frase de resumen en lenguaje llano: lo primero que debe leer quien llega a la revisión. */
+export function summarySentence(summary: AnalysisSummary | null): string {
+  if (summary === null) {
+    return "Todavía no hay resultados.";
+  }
+  const { automaticFindings, needsReview, byImpact } = summary;
+  if (automaticFindings === 0 && needsReview === 0) {
+    return "No hemos encontrado problemas automáticos. Eso no garantiza que la página sea accesible: algunas comprobaciones necesitan revisión a mano.";
+  }
+  const parts: string[] = [];
+  if (automaticFindings > 0) {
+    parts.push(
+      `Hemos encontrado ${pluralize(automaticFindings, "problema automático", "problemas automáticos")}.`,
+    );
+    const severe = byImpact.critical + byImpact.serious;
+    if (severe > 0) {
+      parts.push(
+        `${pluralize(severe, "es crítico o grave", "son críticos o graves")}. Empieza por ${severe === 1 ? "él" : "ellos"}.`,
+      );
+    }
+  }
+  if (needsReview > 0) {
+    parts.push(
+      `Además, ${pluralize(needsReview, "punto necesita", "puntos necesitan")} que lo revise una persona.`,
+    );
+  }
+  return parts.join(" ");
 }
 
 export function AnalysisView({ id }: { readonly id: string }) {
@@ -62,7 +99,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
     return (
       <section className="card">
         <h1 tabIndex={-1} ref={headingRef}>
-          No se pudo cargar el análisis
+          No se pudo abrir esta revisión
         </h1>
         <p role="alert" className="notice notice-error">
           {loadError}
@@ -77,8 +114,8 @@ export function AnalysisView({ id }: { readonly id: string }) {
   if (analysis === null) {
     return (
       <section className="card">
-        <h1 tabIndex={-1}>Cargando el análisis</h1>
-        <p role="status">Consultando el estado del análisis…</p>
+        <h1 tabIndex={-1}>Abriendo la revisión</h1>
+        <p role="status">Un momento, estamos cargando la información.</p>
       </section>
     );
   }
@@ -91,18 +128,23 @@ export function AnalysisView({ id }: { readonly id: string }) {
     return (
       <section aria-labelledby="titulo-fallo" className="card">
         <h1 id="titulo-fallo" tabIndex={-1} ref={headingRef}>
-          No se pudo completar el análisis
+          No se pudo terminar la revisión
         </h1>
         <Meta analysis={analysis} />
         <p role="alert" className="notice notice-error">
-          {analysis.errorMessage ?? "El análisis terminó con un error."}
+          {analysis.errorMessage ?? "La revisión terminó con un error."}
         </p>
         <p className="hint">
-          Código de error: <code>{analysis.errorCode ?? "desconocido"}</code>. Un fallo no significa
-          que la página no tenga incidencias: no se ha comprobado.
+          Que la revisión no haya terminado no significa que la página no tenga problemas: no se ha
+          podido comprobar. Puedes intentarlo de nuevo.
         </p>
+        {analysis.errorCode !== null && (
+          <p className="hint">
+            Código técnico: <code>{analysis.errorCode}</code>
+          </p>
+        )}
         <p>
-          <a href="#/">Probar con otra dirección</a>
+          <a href="#/">Revisar otra página</a>
         </p>
       </section>
     );
@@ -112,41 +154,73 @@ export function AnalysisView({ id }: { readonly id: string }) {
     <section aria-labelledby="titulo-resultados" className="stack-lg">
       <div className="card">
         <h1 id="titulo-resultados" tabIndex={-1} ref={headingRef}>
-          Resultados del análisis
+          Resultados de la revisión
         </h1>
+        <p className="lead">{summarySentence(analysis.summary)}</p>
         <Meta analysis={analysis} />
         <p className="notice">
-          Las incidencias automáticas proceden de axe-core. Las comprobaciones de revisión manual no
-          están aprobadas: requieren una revisión humana. Esta herramienta no certifica la
-          conformidad WCAG.
+          Pink Bridge ayuda a encontrar problemas. No certifica que la página cumpla WCAG ni
+          sustituye las pruebas con personas que usan tecnologías de apoyo.
         </p>
-        <nav aria-label="Descargar informe" className="secondary-actions">
-          <a
-            className="button-link secondary-link"
-            href={`/api/analyses/${analysis.id}/report?format=json`}
-            download
-          >
-            Descargar informe JSON
-          </a>
-          <a
-            className="button-link secondary-link"
-            href={`/api/analyses/${analysis.id}/report?format=html`}
-            download
-          >
-            Descargar informe HTML
-          </a>
-          <a
-            className="button-link secondary-link"
-            href={`/api/analyses/${analysis.id}/agent-prompts`}
-            download
-          >
-            Prompt para Claude Code o Codex (Markdown)
-          </a>
-        </nav>
-        <AgentPromptPanel analysisId={analysis.id} />
       </div>
+
+      <section aria-labelledby="titulo-pasos" className="card">
+        <h2 id="titulo-pasos">Qué hacer ahora</h2>
+        <ol className="steps">
+          <li>
+            Revisa los problemas, empezando por los críticos. Usa el filtro «Gravedad» en la lista
+            de abajo.
+          </li>
+          <li>
+            Corrígelos en tu proyecto. Si usas un asistente de programación, descarga sus
+            instrucciones.
+          </li>
+          <li>Vuelve a revisar la página para comprobar que los problemas han desaparecido.</li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="titulo-guardar" className="card">
+        <h2 id="titulo-guardar">Guardar o compartir</h2>
+        <ul className="download-list">
+          <li>
+            <a
+              className="button-link secondary-link"
+              href={`/api/analyses/${analysis.id}/report?format=html`}
+              download
+            >
+              Informe para compartir (HTML)
+            </a>
+            <span className="hint">Se abre en cualquier navegador. Envíalo a tu equipo.</span>
+          </li>
+          <li>
+            <a
+              className="button-link secondary-link"
+              href={`/api/analyses/${analysis.id}/report?format=json`}
+              download
+            >
+              Datos completos (JSON)
+            </a>
+            <span className="hint">Para programas que quieran procesar los resultados.</span>
+          </li>
+          <li>
+            <a
+              className="button-link secondary-link"
+              href={`/api/analyses/${analysis.id}/agent-prompts`}
+              download
+            >
+              Instrucciones para un asistente de programación (Markdown)
+            </a>
+            <span className="hint">
+              Sirven para pedir a Claude Code o Codex que corrijan los problemas.
+            </span>
+          </li>
+        </ul>
+        <AgentPromptPanel analysisId={analysis.id} />
+      </section>
+
       {analysis.summary !== null && <SummaryCards summary={analysis.summary} />}
       <FindingsPanel analysisId={analysis.id} />
+      <Glossary />
     </section>
   );
 }
@@ -155,7 +229,7 @@ function Meta({ analysis }: { readonly analysis: Analysis }) {
   return (
     <dl className="meta">
       <div>
-        <dt>Dirección</dt>
+        <dt>Página revisada</dt>
         <dd>{analysis.url}</dd>
       </div>
       <div>
@@ -163,17 +237,17 @@ function Meta({ analysis }: { readonly analysis: Analysis }) {
         <dd>{STATUS_LABELS[analysis.status]}</dd>
       </div>
       <div>
-        <dt>Creado</dt>
+        <dt>Fecha</dt>
         <dd>{formatDate(analysis.createdAt)}</dd>
       </div>
       <div>
-        <dt>Duración</dt>
+        <dt>Tiempo que tardó</dt>
         <dd>{formatDuration(analysis.durationMs)}</dd>
       </div>
       {analysis.axeVersion !== null && (
         <div>
-          <dt>Versión de axe-core</dt>
-          <dd>{analysis.axeVersion}</dd>
+          <dt>Motor de comprobación</dt>
+          <dd>axe-core {analysis.axeVersion}</dd>
         </div>
       )}
     </dl>
@@ -188,10 +262,13 @@ function Progress({ analysis }: { readonly analysis: Analysis }) {
   return (
     <section aria-labelledby="titulo-progreso" className="card">
       <h1 id="titulo-progreso" tabIndex={-1}>
-        Analizando la página
+        Estamos revisando la página
       </h1>
+      <p className="lead">
+        Esto tarda unos segundos. No hace falta que hagas nada más mientras esperas.
+      </p>
       <p>
-        <span className="sr-only">Dirección: </span>
+        <span className="sr-only">Página: </span>
         <code>{analysis.url}</code>
       </p>
       <p role="status" aria-live="polite" className="progress-label">

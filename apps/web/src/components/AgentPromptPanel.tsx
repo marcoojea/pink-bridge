@@ -49,12 +49,12 @@ export function AgentPromptPanel({ analysisId }: { readonly analysisId: string }
             void copyPrompt();
           }}
         >
-          Copiar prompt para agentes
+          Copiar instrucciones para el asistente
         </button>
       </div>
       {copy.kind === "done" && (
         <p role="status" className="notice">
-          Prompt copiado. Pégalo en Claude Code o Codex.
+          Instrucciones copiadas. Pégalas en Claude Code o Codex.
         </p>
       )}
       {copy.kind === "error" && (
@@ -63,10 +63,11 @@ export function AgentPromptPanel({ analysisId }: { readonly analysisId: string }
         </p>
       )}
       <details>
-        <summary>Ejecutar desde la terminal</summary>
+        <summary>Cómo usarlas desde la terminal</summary>
         <p className="hint">
-          Sustituye <code>ARCHIVO</code> por la ruta de <code>{fileName}</code> y ejecuta el comando
-          dentro de la carpeta del repositorio que quieres corregir.
+          Primero descarga el archivo <code>{fileName}</code>. Después, en la terminal y dentro de
+          la carpeta del proyecto que quieres corregir, cambia <code>ARCHIVO</code> por la ruta de
+          ese archivo y ejecuta uno de estos comandos.
         </p>
         <pre>
           <code>{`claude "$(cat ARCHIVO)"`}</code>
@@ -75,8 +76,8 @@ export function AgentPromptPanel({ analysisId }: { readonly analysisId: string }
           <code>{`codex "$(cat ARCHIVO)"`}</code>
         </pre>
         <p className="hint">
-          El prompt incluye texto de la web analizada. Revisa cada cambio que proponga el agente
-          antes de aceptarlo.
+          Las instrucciones incluyen texto de la web revisada. Revisa cada cambio que proponga el
+          asistente antes de aceptarlo.
         </p>
       </details>
     </div>

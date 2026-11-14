@@ -28,13 +28,15 @@ describe("ReviewEditor", () => {
     const onSaved = vi.fn();
     render(<ReviewEditor finding={finding} review={undefined} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "reviewed" } });
+    fireEvent.change(screen.getByLabelText("¿En qué punto estás?"), {
+      target: { value: "reviewed" },
+    });
     fireEvent.change(screen.getByLabelText("Nota (opcional)"), {
       target: { value: "  Comprobado en la plantilla.  " },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar revisión" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar mi seguimiento" }));
 
-    expect(await screen.findByText("Revisión guardada.")).toBeTruthy();
+    expect(await screen.findByText("Tu seguimiento está guardado.")).toBeTruthy();
     expect(onSaved).toHaveBeenCalledWith(saved);
     const call = mock.mock.calls[0];
     expect(call?.[0]).toBe(`/api/findings/${encodeURIComponent(finding.id)}/review`);
@@ -57,9 +59,9 @@ describe("ReviewEditor", () => {
     }));
     render(<ReviewEditor finding={finding} review={undefined} onSaved={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "fixed" } });
-    expect(screen.getByText(/No se verifica automáticamente/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Guardar revisión" }));
+    fireEvent.change(screen.getByLabelText("¿En qué punto estás?"), { target: { value: "fixed" } });
+    expect(screen.getByText(/no comprueba por sí sola/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Guardar mi seguimiento" }));
 
     await waitFor(() => {
       expect(mock).toHaveBeenCalledTimes(1);
@@ -75,7 +77,7 @@ describe("ReviewEditor", () => {
     render(<ReviewEditor finding={finding} review={undefined} onSaved={vi.fn()} />);
 
     fireEvent.change(screen.getByLabelText("Nota (opcional)"), { target: { value: "borrador" } });
-    fireEvent.click(screen.getByRole("button", { name: "Guardar revisión" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar mi seguimiento" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe("Incidencia no encontrada.");
     expect(screen.getByLabelText<HTMLTextAreaElement>("Nota (opcional)").value).toBe("borrador");
@@ -89,8 +91,8 @@ describe("ReviewEditor", () => {
       updatedAt: "2026-11-12T10:05:00.000Z",
     };
     render(<ReviewEditor finding={finding} review={existing} onSaved={vi.fn()} />);
-    expect(screen.getByText(/Última actualización/)).toBeTruthy();
-    expect(screen.getByLabelText<HTMLSelectElement>("Estado").value).toBe("accepted");
+    expect(screen.getByText(/Última vez guardado/)).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>("¿En qué punto estás?").value).toBe("accepted");
     expect(ANALYSIS_ID).toHaveLength(36);
   });
 });

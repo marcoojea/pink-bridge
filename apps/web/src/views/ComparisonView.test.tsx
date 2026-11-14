@@ -58,17 +58,15 @@ describe("ComparisonView", () => {
     stubFetch(() => ({ status: 200, body: RESULT }));
     render(<ComparisonView from={FROM} to={TO} />);
 
+    expect(await screen.findByRole("heading", { level: 1, name: "Qué ha cambiado" })).toBeTruthy();
+    expect(screen.getByText("Enlace sin texto")).toBeTruthy();
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Comparación de análisis" }),
+      screen.getByRole("heading", { level: 2, name: "Resueltos (sin comprobar)" }),
     ).toBeTruthy();
-    expect(screen.getByText("link-name")).toBeTruthy();
-    expect(
-      screen.getByRole("heading", { level: 2, name: "Resueltas (no verificadas)" }),
-    ).toBeTruthy();
-    expect(screen.getByText("image-alt")).toBeTruthy();
-    expect(screen.getByText("Coincidencia aproximada")).toBeTruthy();
+    expect(screen.getByText("Imagen sin descripción")).toBeTruthy();
+    expect(screen.getByText("Parece el mismo problema, pero en otra posición")).toBeTruthy();
     expect(screen.getByText("+1", { selector: "dd" })).toBeTruthy();
-    expect(screen.getByText(/no equivale a una corrección verificada/)).toBeTruthy();
+    expect(screen.getByText(/No significa que esté comprobado como corregido/)).toBeTruthy();
   });
 
   it("muestra los estados vacíos de cada lista", async () => {
@@ -88,9 +86,9 @@ describe("ComparisonView", () => {
     }));
     render(<ComparisonView from={FROM} to={TO} />);
 
-    expect(await screen.findByText("No hay incidencias nuevas.")).toBeTruthy();
-    expect(screen.getByText("No hay incidencias que hayan dejado de aparecer.")).toBeTruthy();
-    expect(screen.getByText("No hay incidencias que persistan.")).toBeTruthy();
+    expect(await screen.findByText("No hay problemas nuevos.")).toBeTruthy();
+    expect(screen.getByText("No hay problemas que hayan dejado de aparecer.")).toBeTruthy();
+    expect(screen.getByText("Ningún problema sigue igual.")).toBeTruthy();
   });
 
   it("explica el error cuando la API rechaza la comparación", async () => {

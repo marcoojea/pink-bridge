@@ -2,13 +2,19 @@ import { useId, useState, type SyntheticEvent } from "react";
 import type { Finding, ReviewState, ReviewStatus } from "@pink-bridge/shared";
 import { saveReview } from "../api/client.js";
 import { messageOf } from "../views/HomeView.js";
-import { formatDate, REVIEW_LABELS } from "../labels.js";
+import { formatDate } from "../labels.js";
 
-const STATUS_OPTIONS: readonly ReviewStatus[] = ["pending", "reviewed", "accepted", "fixed"];
+/** Estados que el usuario elige, con texto pensado para quien no conoce la herramienta. */
+const STATUS_OPTIONS: readonly (readonly [ReviewStatus, string])[] = [
+  ["pending", "Todavía no lo he mirado"],
+  ["reviewed", "Lo he revisado"],
+  ["accepted", "Lo acepto tal cual, no lo voy a corregir"],
+  ["fixed", "Ya lo he corregido"],
+];
 
 /**
- * Editor del estado de revisión humana. Se guarda aparte de la auditoría: los resultados
- * automáticos nunca cambian al revisar.
+ * Seguimiento humano del problema. Se guarda aparte de la revisión automática: cambiar el
+ * estado nunca altera los resultados.
  */
 export function ReviewEditor({
   finding,
@@ -42,7 +48,7 @@ export function ReviewEditor({
         ...(trimmed === "" ? {} : { note: trimmed }),
       });
       onSaved(saved);
-      setMessage("Revisión guardada.");
+      setMessage("Tu seguimiento está guardado.");
     } catch (caught) {
       setError(messageOf(caught));
     } finally {
@@ -56,9 +62,13 @@ export function ReviewEditor({
       className="review-editor stack"
       aria-labelledby={`${statusId}-title`}
     >
-      <h4 id={`${statusId}-title`}>Revisión humana</h4>
+      <h4 id={`${statusId}-title`}>Tu seguimiento</h4>
+      <p className="hint">
+        Sirve para que tu equipo sepa en qué punto está este problema. No cambia el resultado de la
+        revisión.
+      </p>
       <div className="field">
-        <label htmlFor={statusId}>Estado</label>
+        <label htmlFor={statusId}>¿En qué punto estás?</label>
         <select
           id={statusId}
           value={status}
@@ -67,9 +77,9 @@ export function ReviewEditor({
           }}
           disabled={saving}
         >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {REVIEW_LABELS[option]}
+          {STATUS_OPTIONS.map(([value, text]) => (
+            <option key={value} value={value}>
+              {text}
             </option>
           ))}
         </select>
@@ -89,16 +99,16 @@ export function ReviewEditor({
       </div>
       {status === "fixed" && (
         <p className="notice">
-          Marcar la incidencia como corregida es una decisión humana. No se verifica
-          automáticamente: confirma el cambio con un nuevo análisis.
+          Pink Bridge no comprueba por sí sola que el problema esté corregido. Para confirmarlo,
+          vuelve a revisar la página cuando hayas hecho el cambio.
         </p>
       )}
       <div className="actions">
         <button type="submit" disabled={saving}>
-          {saving ? "Guardando…" : "Guardar revisión"}
+          {saving ? "Guardando…" : "Guardar mi seguimiento"}
         </button>
         {review && (
-          <span className="hint">Última actualización: {formatDate(review.updatedAt)}</span>
+          <span className="hint">Última vez guardado: {formatDate(review.updatedAt)}</span>
         )}
       </div>
       {message !== null && (

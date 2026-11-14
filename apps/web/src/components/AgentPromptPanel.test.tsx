@@ -38,9 +38,11 @@ describe("AgentPromptPanel", () => {
     stubClipboard(writeText);
     render(<AgentPromptPanel analysisId={ANALYSIS_ID} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Copiar prompt para agentes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copiar instrucciones para el asistente" }));
 
-    expect(await screen.findByText("Prompt copiado. Pégalo en Claude Code o Codex.")).toBeTruthy();
+    expect(
+      await screen.findByText("Instrucciones copiadas. Pégalas en Claude Code o Codex."),
+    ).toBeTruthy();
     expect(mock.mock.calls[0]?.[0]).toBe(`/api/analyses/${ANALYSIS_ID}/agent-prompts`);
     expect(writeText).toHaveBeenCalledWith(MARKDOWN);
   });
@@ -50,7 +52,7 @@ describe("AgentPromptPanel", () => {
     stubClipboard(undefined);
     render(<AgentPromptPanel analysisId={ANALYSIS_ID} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Copiar prompt para agentes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copiar instrucciones para el asistente" }));
 
     expect(
       await screen.findByText(
@@ -64,10 +66,10 @@ describe("AgentPromptPanel", () => {
     stubClipboard(() => Promise.resolve());
     render(<AgentPromptPanel analysisId={ANALYSIS_ID} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Copiar prompt para agentes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copiar instrucciones para el asistente" }));
 
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(screen.queryByText(/Prompt copiado/)).toBeNull();
+    expect(screen.queryByText(/Instrucciones copiadas/)).toBeNull();
   });
 
   it("ofrece los comandos de terminal con el nombre del archivo del análisis", () => {

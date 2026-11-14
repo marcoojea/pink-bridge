@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { Finding, FindingKind, Impact, ReviewState } from "@pink-bridge/shared";
 import { getFindings, getReviews } from "../api/client.js";
 import { messageOf } from "../views/HomeView.js";
-import { IMPACT_LABELS, KIND_LABELS, REVIEW_LABELS } from "../labels.js";
+import {
+  IMPACT_HELP,
+  IMPACT_LABELS,
+  KIND_HELP,
+  KIND_LABELS,
+  pluralize,
+  REVIEW_LABELS,
+  ruleTitle,
+} from "../labels.js";
 import { ReviewEditor } from "./ReviewEditor.js";
 
 export interface FindingFilters {
@@ -26,6 +34,12 @@ export function filterFindings(findings: readonly Finding[], filters: FindingFil
 }
 
 const IMPACT_OPTIONS: readonly Impact[] = ["critical", "serious", "moderate", "minor", "unknown"];
+
+const VIEWPORT_LABELS: Readonly<Record<"mobile" | "tablet" | "desktop", string>> = {
+  mobile: "móvil",
+  tablet: "tablet",
+  desktop: "escritorio",
+};
 
 export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
   const [findings, setFindings] = useState<Finding[] | null>(null);
@@ -70,7 +84,7 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
   if (loadError !== null) {
     return (
       <section className="card">
-        <h2>Incidencias</h2>
+        <h2>Problemas encontrados</h2>
         <p role="alert" className="notice notice-error">
           {loadError}
         </p>
@@ -81,8 +95,8 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
   if (findings === null) {
     return (
       <section className="card">
-        <h2>Incidencias</h2>
-        <p role="status">Cargando las incidencias…</p>
+        <h2>Problemas encontrados</h2>
+        <p role="status">Cargando la lista de problemas…</p>
         <ul className="finding-list" aria-hidden="true">
           {[0, 1, 2].map((row) => (
             <li key={row} className="skeleton-row" />
@@ -96,19 +110,21 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
 
   return (
     <section aria-labelledby="titulo-incidencias" className="card stack">
-      <h2 id="titulo-incidencias">Incidencias</h2>
+      <h2 id="titulo-incidencias">Problemas encontrados</h2>
 
       {findings.length === 0 ? (
-        <p>
-          No se ha detectado ninguna incidencia automática ni comprobación pendiente de revisión.
-        </p>
+        <p>No hemos encontrado ningún problema automático ni comprobación pendiente de revisar.</p>
       ) : (
         <>
+          <p>
+            Cada tarjeta es un problema. Pulsa «Ver cómo arreglarlo» para ver dónde está y qué
+            hacer.
+          </p>
           <fieldset className="filters">
-            <legend>Filtrar incidencias</legend>
+            <legend>Mostrar solo</legend>
             <div className="filter-row">
               <div className="field">
-                <label htmlFor="filtro-tipo">Tipo</label>
+                <label htmlFor="filtro-tipo">Tipo de problema</label>
                 <select
                   id="filtro-tipo"
                   value={filters.kind}
@@ -139,7 +155,7 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="filtro-regla">Regla</label>
+                <label htmlFor="filtro-regla">Regla técnica (para desarrolladores)</label>
                 <select
                   id="filtro-regla"
                   value={filters.ruleId}
@@ -150,21 +166,32 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
                   <option value="">Todas</option>
                   {rules.map((rule) => (
                     <option key={rule} value={rule}>
-                      {rule}
+                      {ruleTitle(rule)}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
+            <dl className="impact-help">
+              {IMPACT_OPTIONS.map((impact) => (
+                <div key={impact}>
+                  <dt>
+                    <span className={`badge badge-${impact}`}>{IMPACT_LABELS[impact]}</span>
+                  </dt>
+                  <dd className="hint">{IMPACT_HELP[impact]}</dd>
+                </div>
+              ))}
+            </dl>
           </fieldset>
 
           <p className="hint" role="status" aria-live="polite">
-            Mostrando {visible.length} de {findings.length} incidencias.
+            Mostrando {pluralize(visible.length, "problema", "problemas")} de{" "}
+            {pluralize(findings.length, "problema", "problemas")}.
           </p>
 
           {visible.length === 0 ? (
             <div className="empty">
-              <p>No hay incidencias que coincidan con los filtros.</p>
+              <p>No hay problemas que coincidan con estos filtros.</p>
               {filtersActive && (
                 <button
                   type="button"
@@ -182,7 +209,7 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
               {visible.map((finding) => (
                 <li key={finding.id} className="finding-item">
                   <div>
-                    <h3>{finding.ruleId}</h3>
+                    <h3>{ruleTitle(finding.ruleId)}</h3>
                     <p className="badges">
                       <span className={`badge badge-${finding.impact}`}>
                         {IMPACT_LABELS[finding.impact]}
@@ -192,12 +219,17 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
                     <p>{finding.description}</p>
                     {finding.pageUrl !== undefined && (
                       <p className="hint">
-                        {finding.pageUrl} · {finding.viewport ?? "escritorio"}
+                        Dónde: {finding.pageUrl}
+                        {finding.viewport !== undefined &&
+                          ` (${VIEWPORT_LABELS[finding.viewport]})`}
                       </p>
                     )}
                     <p className="hint">
-                      {finding.affectedNodeCount}{" "}
-                      {finding.affectedNodeCount === 1 ? "elemento" : "elementos"}
+                      {pluralize(
+                        finding.affectedNodeCount,
+                        "elemento afectado",
+                        "elementos afectados",
+                      )}
                     </p>
                   </div>
                   <button
@@ -205,12 +237,12 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
                     className="secondary"
                     aria-expanded={selectedId === finding.id}
                     aria-controls="detalle-incidencia"
-                    aria-label={`${selectedId === finding.id ? "Ocultar" : "Ver"} detalle de ${finding.ruleId}`}
+                    aria-label={`${selectedId === finding.id ? "Ocultar" : "Ver cómo arreglarlo"}: ${ruleTitle(finding.ruleId)}`}
                     onClick={() => {
                       setSelectedId(selectedId === finding.id ? null : finding.id);
                     }}
                   >
-                    {selectedId === finding.id ? "Ocultar detalle" : "Ver detalle"}
+                    {selectedId === finding.id ? "Ocultar" : "Ver cómo arreglarlo"}
                   </button>
                 </li>
               ))}
@@ -245,6 +277,7 @@ function FindingDetail({
   readonly onSaved: (review: ReviewState) => void;
 }) {
   const isReview = finding.kind === "needs_review";
+  const title = ruleTitle(finding.ruleId);
 
   return (
     <section
@@ -254,49 +287,51 @@ function FindingDetail({
       tabIndex={-1}
       ref={detailRef}
     >
-      <h3 id="titulo-detalle">Detalle: {finding.ruleId}</h3>
+      <h3 id="titulo-detalle">Cómo arreglar: {title}</h3>
       <p className="badges">
         <span className={`badge badge-${finding.impact}`}>{IMPACT_LABELS[finding.impact]}</span>
         <span className="badge badge-kind">{KIND_LABELS[finding.kind]}</span>
         <span className="badge badge-pending">
-          Estado de revisión: {REVIEW_LABELS[review?.status ?? "pending"]}
+          Tu revisión: {REVIEW_LABELS[review?.status ?? "pending"]}
         </span>
       </p>
 
-      {isReview && (
-        <p className="notice">
-          Esta comprobación requiere revisión manual. No está aprobada ni incumplida por la
-          herramienta.
-        </p>
-      )}
+      {isReview && <p className="notice">{KIND_HELP.needs_review}</p>}
 
       <h4>Qué significa</h4>
       <p>{finding.description}</p>
 
-      <h4>Criterio de referencia</h4>
+      <h4>Norma WCAG relacionada</h4>
       {finding.wcagReferences.length > 0 ? (
-        <p>WCAG {finding.wcagReferences.join(", ")}</p>
+        <p>
+          WCAG {finding.wcagReferences.join(", ")}. Son las normas internacionales de accesibilidad
+          web.
+        </p>
       ) : (
-        <p>Sin criterio WCAG asociado: se trata de una buena práctica.</p>
+        <p>No está ligado a una norma WCAG concreta: es una buena práctica.</p>
       )}
 
-      <h4>Recomendación</h4>
+      <h4>Cómo arreglarlo</h4>
       <p>{finding.recommendation}</p>
 
       {finding.helpUrl !== null && (
         <p>
           <a href={finding.helpUrl} target="_blank" rel="noopener noreferrer">
-            Documentación de la regla en axe-core (se abre en una pestaña nueva)
+            Leer la explicación de esta regla (se abre en otra pestaña)
           </a>
         </p>
       )}
 
-      <h4>Elementos afectados</h4>
+      <h4>Dónde está</h4>
+      <p className="hint">
+        Cada elemento es una parte concreta de la página. El selector sirve para localizarlo en el
+        código.
+      </p>
       <ol className="node-list">
-        {finding.nodes.map((node) => (
+        {finding.nodes.map((node, index) => (
           <li key={node.id}>
             <p>
-              Selector: <code>{node.selector}</code>
+              Elemento {index + 1}. Selector: <code>{node.selector}</code>
             </p>
             {node.evidence.map((item) => (
               <div key={`${node.id}-${item.type}`}>
@@ -308,7 +343,7 @@ function FindingDetail({
                   <p className="hint">{item.content}</p>
                 )}
                 {item.redacted && (
-                  <p className="hint">Algunos valores sensibles se han redactado.</p>
+                  <p className="hint">Algunos valores sensibles se han ocultado.</p>
                 )}
               </div>
             ))}
@@ -319,8 +354,8 @@ function FindingDetail({
       <ReviewEditor key={finding.id} finding={finding} review={review} onSaved={onSaved} />
 
       <p className="hint">
-        Las incidencias y las comprobaciones de revisión manual se muestran tal como las ha
-        detectado el análisis. La revisión humana se guarda aparte y no altera el resultado.
+        Esta lista muestra lo que encontró la revisión. Tu seguimiento se guarda aparte y no cambia
+        el resultado.
       </p>
     </section>
   );

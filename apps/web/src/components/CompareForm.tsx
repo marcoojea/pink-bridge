@@ -4,7 +4,7 @@ import { compareHref, navigateTo } from "../router.js";
 import { formatDate } from "../labels.js";
 
 /**
- * Elige dos análisis completados de la misma URL normalizada. Solo ofrece combinaciones compatibles,
+ * Elige dos revisiones completadas de la misma dirección. Solo ofrece combinaciones compatibles,
  * de modo que el servidor nunca recibe una comparación que sabemos inválida.
  */
 export function CompareForm({ items }: { readonly items: readonly Analysis[] }) {
@@ -23,14 +23,14 @@ export function CompareForm({ items }: { readonly items: readonly Analysis[] }) 
 
   return (
     <section aria-labelledby={`${baseId}-title`} className="card stack">
-      <h2 id={`${baseId}-title`}>Comparar dos análisis</h2>
+      <h2 id={`${baseId}-title`}>¿Quieres ver qué ha cambiado?</h2>
       <p className="hint">
-        Solo se comparan análisis completados de la misma dirección. Las incidencias resueltas no se
-        dan por corregidas.
+        Elige dos revisiones completadas de la misma página. Te diremos qué problemas son nuevos,
+        cuáles han desaparecido y cuáles siguen igual.
       </p>
       <div className="filter-row">
         <div className="field">
-          <label htmlFor={baseId}>Análisis base</label>
+          <label htmlFor={baseId}>Primera revisión (la más antigua)</label>
           <select
             id={baseId}
             value={baseline}
@@ -48,7 +48,7 @@ export function CompareForm({ items }: { readonly items: readonly Analysis[] }) 
           </select>
         </div>
         <div className="field">
-          <label htmlFor={targetId}>Análisis a comparar</label>
+          <label htmlFor={targetId}>Segunda revisión (la más reciente)</label>
           <select
             id={targetId}
             value={target}
