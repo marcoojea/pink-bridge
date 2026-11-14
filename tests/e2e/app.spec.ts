@@ -166,7 +166,7 @@ test("revisar una incidencia guarda la nota y dos ejecuciones se comparan desde 
   await runDemo(page);
   await expect(page.getByRole("link", { name: "Datos completos (JSON)" })).toHaveAttribute(
     "download",
-    "",
+    /^datos-.+\.json$/,
   );
 
   await page.getByRole("button", { name: "Ver cómo arreglarlo: Imagen sin descripción" }).click();

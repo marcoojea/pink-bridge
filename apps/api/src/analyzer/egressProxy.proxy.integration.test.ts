@@ -29,6 +29,7 @@ function rawExchange(proxyPort: number, payload: string, withAuth = true): Promi
 }
 
 let proxy: EgressProxy;
+let resolveCalls = 0;
 let upstream: Server;
 let upstreamPort: number;
 
@@ -50,10 +51,13 @@ beforeAll(async () => {
   upstreamPort = (upstream.address() as AddressInfo).port;
 
   proxy = await startEgressProxy({
-    resolve: () => Promise.resolve(["127.0.0.1"]),
+    resolve: () => {
+      resolveCalls += 1;
+      return Promise.resolve(["127.0.0.1"]);
+    },
     allowedPorts: [80, 443, upstreamPort],
     // SOLO PRUEBAS: los nombres de prueba resuelven a loopback y deben quedar exentos del guardia.
-    trustedHosts: new Set(["permitido.example", "grande.example"]),
+    trustedHosts: new Set(["permitido.example", "grande.example", "cache.example"]),
     maxBytes: 1024,
   });
   credential = authOf(proxy);
@@ -131,6 +135,35 @@ describe("proxy de salida (protocolo y rechazos)", () => {
       request.end();
     });
     expect(proxy.events.tooLarge).toBe(true);
+  });
+
+  it("resuelve cada nombre una sola vez por sesión del proxy", async () => {
+    const before = resolveCalls;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await new Promise<void>((resolve, reject) => {
+        const request = httpRequest(
+          {
+            host: "127.0.0.1",
+            port: proxy.port,
+            method: "GET",
+            path: `http://cache.example:${String(upstreamPort)}/`,
+            headers: {
+              host: `cache.example:${String(upstreamPort)}`,
+              "proxy-authorization": `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64")}`,
+            },
+          },
+          (response) => {
+            response.resume();
+            response.on("end", () => {
+              resolve();
+            });
+          },
+        );
+        request.on("error", reject);
+        request.end();
+      });
+    }
+    expect(resolveCalls - before).toBe(1);
   });
 
   it("exige credenciales: sin ellas responde 407 y no toca la red", async () => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Analysis, AnalysisSummary } from "@pink-bridge/shared";
 import { getAnalysis } from "../api/client.js";
+import { downloadWithToken, getToken } from "../api/token.js";
 import { AgentPromptPanel } from "../components/AgentPromptPanel.js";
 import { FindingsPanel } from "../components/FindingsPanel.js";
 import { Glossary } from "../components/Glossary.js";
@@ -185,33 +186,30 @@ export function AnalysisView({ id }: { readonly id: string }) {
         <h2 id="titulo-guardar">Guardar o compartir</h2>
         <ul className="download-list">
           <li>
-            <a
-              className="button-link secondary-link"
+            <DownloadLink
               href={apiHref(`/api/analyses/${analysis.id}/report?format=html`)}
-              download
+              filename={`informe-${analysis.id}.html`}
             >
               Informe para compartir (HTML)
-            </a>
+            </DownloadLink>
             <span className="hint">Se abre en cualquier navegador. Envíalo a tu equipo.</span>
           </li>
           <li>
-            <a
-              className="button-link secondary-link"
+            <DownloadLink
               href={apiHref(`/api/analyses/${analysis.id}/report?format=json`)}
-              download
+              filename={`datos-${analysis.id}.json`}
             >
               Datos completos (JSON)
-            </a>
+            </DownloadLink>
             <span className="hint">Para programas que quieran procesar los resultados.</span>
           </li>
           <li>
-            <a
-              className="button-link secondary-link"
+            <DownloadLink
               href={apiHref(`/api/analyses/${analysis.id}/agent-prompts`)}
-              download
+              filename={`instrucciones-${analysis.id}.md`}
             >
               Instrucciones para un asistente de programación (Markdown)
-            </a>
+            </DownloadLink>
             <span className="hint">
               Sirven para pedir a Claude Code o Codex que corrijan los problemas.
             </span>
@@ -224,6 +222,45 @@ export function AnalysisView({ id }: { readonly id: string }) {
       <FindingsPanel analysisId={analysis.id} />
       <Glossary />
     </section>
+  );
+}
+
+/** Enlace de descarga. Con token guardado descarga con la cabecera de autorización; sin él, es un enlace normal. */
+function DownloadLink({
+  href,
+  filename,
+  children,
+}: {
+  readonly href: string;
+  readonly filename: string;
+  readonly children: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <>
+      <a
+        className="button-link secondary-link"
+        href={href}
+        download={filename}
+        onClick={(event) => {
+          if (getToken() === null) {
+            return;
+          }
+          event.preventDefault();
+          setFailed(false);
+          downloadWithToken(href, filename).catch(() => {
+            setFailed(true);
+          });
+        }}
+      >
+        {children}
+      </a>
+      {failed && (
+        <span role="alert" className="hint">
+          No se pudo descargar. Comprueba el token de acceso.
+        </span>
+      )}
+    </>
   );
 }
 

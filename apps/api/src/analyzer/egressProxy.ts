@@ -250,13 +250,35 @@ export async function startEgressProxy(policy: EgressPolicy): Promise<EgressProx
   const password = randomBytes(24).toString("hex");
   const expected = `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
 
+  // Cada nombre se resuelve una vez por sesión. Las conexiones reutilizan esa respuesta y la siguen
+  // validando contra el guardia de IP, así un DNS que cambie a mitad del análisis no obtiene otro destino.
+  const lookups = new Map<string, Promise<readonly string[]>>();
+  const sessionPolicy: EgressPolicy = {
+    ...policy,
+    resolve: (hostname) => {
+      const key = normalizeHostname(hostname);
+      let pending = lookups.get(key);
+      if (pending === undefined) {
+        pending = policy.resolve(hostname);
+        lookups.set(key, pending);
+        // Un fallo no se guarda: la siguiente conexión vuelve a intentar la resolución.
+        pending.catch(() => {
+          lookups.delete(key);
+        });
+      }
+      return pending;
+    },
+  };
+
   const server: Server = createServer((request, response) => {
-    handleHttp(request, response, policy, events, expected).catch(() => {
+    handleHttp(request, response, sessionPolicy, events, expected).catch(() => {
       rejectHttp(response, 502, false);
     });
   });
   server.on("connect", (request: IncomingMessage, socket: Socket, head: Buffer) => {
-    handleConnect(request, socket, head, policy, events, expected).catch(() => socket.destroy());
+    handleConnect(request, socket, head, sessionPolicy, events, expected).catch(() =>
+      socket.destroy(),
+    );
   });
 
   await new Promise<void>((resolve, reject) => {

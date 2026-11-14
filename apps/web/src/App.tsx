@@ -4,6 +4,7 @@ import { routeHref, useRoute } from "./router.js";
 
 // Las vistas poco frecuentes se cargan al abrirlas: la portada llega antes.
 import { DEMO } from "./demo.js";
+import { AccessForm } from "./components/AccessForm.js";
 const AnalysisView = lazy(() =>
   import("./views/AnalysisView.js").then((module) => ({ default: module.AnalysisView })),
 );
@@ -54,6 +55,7 @@ export function App() {
             </li>
           </ul>
         </nav>
+        {!DEMO && <AccessForm />}
       </header>
       <main id="contenido" tabIndex={-1}>
         {DEMO && (
