@@ -26,6 +26,7 @@
     "test:unit": "npm run build:shared && npm run test:unit --workspaces --if-present",
     "test:integration": "npm run build:shared && npm run test:integration --workspaces --if-present",
     "test:e2e": "npm run build:shared && playwright test",
+    "docs:screenshots": "playwright test -c playwright.docs.config.ts && node scripts/make-gif.mjs",
     "audit": "npm audit --audit-level=high",
     "prepare": "husky"
   },
