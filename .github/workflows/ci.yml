@@ -52,3 +52,51 @@ jobs:
           path: playwright-report/
           if-no-files-found: ignore
           retention-days: 7
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir la imagen de la API
+        run: docker build --target api -t pink-bridge-api:ci .
+
+      # Mismo ajuste que el job verify: el sandbox de Chromium necesita namespaces de usuario.
+      - name: Habilitar sandbox de Chromium en el runner
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      - name: Levantar la API y esperar el healthcheck
+        run: |
+          docker run -d --name api --security-opt seccomp=unconfined \
+            -p 127.0.0.1:3001:3001 pink-bridge-api:ci
+          for _ in $(seq 1 40); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' api)
+            if [ "$status" = "healthy" ]; then exit 0; fi
+            sleep 3
+          done
+          docker logs api
+          exit 1
+
+      # Un análisis real del fixture: comprueba que el navegador del contenedor funciona de verdad.
+      - name: Analizar el sitio de demostración dentro del contenedor
+        run: |
+          ID=$(python3 -c "import uuid; print(uuid.uuid4())")
+          RESP=$(curl -fsS -X POST http://127.0.0.1:3001/api/analyses \
+            -H 'content-type: application/json' \
+            -d "{\"target\":\"demo\",\"submissionToken\":\"$ID\"}")
+          AID=$(echo "$RESP" | python3 -c "import sys, json; print(json.load(sys.stdin)['id'])")
+          for _ in $(seq 1 30); do
+            STATUS=$(curl -fsS "http://127.0.0.1:3001/api/analyses/$AID" | python3 -c "import sys, json; print(json.load(sys.stdin)['status'])")
+            if [ "$STATUS" = "completed" ]; then exit 0; fi
+            if [ "$STATUS" = "failed" ]; then exit 1; fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Limpiar el contenedor
+        if: always()
+        run: docker rm -f api || true
