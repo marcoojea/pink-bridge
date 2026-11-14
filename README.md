@@ -7,7 +7,7 @@
 Pink Bridge checks web pages for accessibility problems and tells you what changed since the last check. It opens the page in an isolated Chromium with Playwright, runs axe-core, and compares each run with the previous one: new, resolved and persistent issues.
 
 - **Who it is for:** development and QA teams with a live site that cannot fix every problem at once.
-- **Try it:** the [read-only demo with sample data](https://marcoojea.github.io/pink-bridge/) needs no install. Locally, `docker compose up --build` serves it at http://127.0.0.1:8080.
+- **Try it:** the [read-only demo with sample data](https://marcoojea.github.io/pink-bridge/) needs no install. Example report: [HTML](https://marcoojea.github.io/pink-bridge/demo/analyses/f69e5f9d-4257-4c9e-baff-6eea43aad813/report.html) and [JSON](https://marcoojea.github.io/pink-bridge/demo/analyses/f69e5f9d-4257-4c9e-baff-6eea43aad813/report.json). Locally, `docker compose up --build` serves it at http://127.0.0.1:8080.
 - **CI:** the CLI `npm run cli -- audit` compares a page with a baseline file kept in git, and exits with code 1 only when new serious or critical issues appear. See [Usarlo en tu CI](#usarlo-en-tu-ci) below.
 - **Stack:** TypeScript (strict), React 19 and Vite, Fastify 5, SQLite (better-sqlite3), Zod as the shared contract, Playwright, axe-core, Vitest, ESLint, Docker and GitHub Actions.
 - **Security:** URL validation, a destination guard on every connection, an isolated browser with per-session proxy credentials, and size and time limits. There is no user authentication, so it is meant for local or internal use.
