@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { Finding, FindingKind, Impact, ReviewState } from "@pink-bridge/shared";
 import { getFindings, getReviews } from "../api/client.js";
+import { hashParams, setHashParams } from "../router.js";
 import { messageOf } from "../views/HomeView.js";
 import {
   IMPACT_HELP,
@@ -35,6 +36,17 @@ export function filterFindings(findings: readonly Finding[], filters: FindingFil
 
 const IMPACT_OPTIONS: readonly Impact[] = ["critical", "serious", "moderate", "minor", "unknown"];
 
+/** Lee los filtros de la query del hash; los valores desconocidos se ignoran. */
+function filtersFromParams(params: URLSearchParams): FindingFilters {
+  const kind = params.get("tipo");
+  const impact = params.get("gravedad");
+  return {
+    kind: kind === "automatic" || kind === "needs_review" ? kind : "",
+    impact: IMPACT_OPTIONS.find((option) => option === impact) ?? "",
+    ruleId: params.get("regla") ?? "",
+  };
+}
+
 const VIEWPORT_LABELS: Readonly<Record<"mobile" | "tablet" | "desktop", string>> = {
   mobile: "móvil",
   tablet: "tablet",
@@ -45,28 +57,44 @@ export function FindingsPanel({ analysisId }: { readonly analysisId: string }) {
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [reviews, setReviews] = useState<Record<string, ReviewState>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FindingFilters>(NO_FILTERS);
+  const [filters, setFilters] = useState<FindingFilters>(() => filtersFromParams(hashParams()));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([getFindings(analysisId), getReviews(analysisId)])
+    const controller = new AbortController();
+    Promise.all([
+      getFindings(analysisId, {}, controller.signal),
+      getReviews(analysisId, controller.signal),
+    ])
       .then(([items, reviewList]) => {
-        if (!cancelled) {
-          setFindings(items);
-          setReviews(Object.fromEntries(reviewList.map((review) => [review.findingId, review])));
-        }
+        setFindings(items);
+        setReviews(Object.fromEntries(reviewList.map((review) => [review.findingId, review])));
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoadError(messageOf(error));
         }
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [analysisId]);
+
+  // Los filtros viajan en la dirección: se pueden compartir y sobreviven a una recarga.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.kind) {
+      params.set("tipo", filters.kind);
+    }
+    if (filters.impact) {
+      params.set("gravedad", filters.impact);
+    }
+    if (filters.ruleId) {
+      params.set("regla", filters.ruleId);
+    }
+    setHashParams(params);
+  }, [filters]);
 
   const rules = useMemo(
     () => [...new Set((findings ?? []).map((finding) => finding.ruleId))].sort(),
@@ -327,6 +355,11 @@ function FindingDetail({
         Cada elemento es una parte concreta de la página. El selector sirve para localizarlo en el
         código.
       </p>
+      {finding.nodes.length < finding.affectedNodeCount && (
+        <p className="hint">
+          Se muestran los primeros {finding.nodes.length} de {finding.affectedNodeCount} elementos.
+        </p>
+      )}
       <ol className="node-list">
         {finding.nodes.map((node, index) => (
           <li key={node.id}>

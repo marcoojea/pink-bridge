@@ -5,6 +5,7 @@ import {
   type Server,
   type ServerResponse,
 } from "node:http";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { connect as netConnect, type Socket } from "node:net";
 import {
   DestinationBlockedError,
@@ -34,10 +35,24 @@ export interface EgressEvents {
 export interface EgressProxy {
   readonly port: number;
   readonly events: EgressEvents;
+  /** Credenciales aleatorias de un solo uso: solo el navegador del análisis las conoce. */
+  readonly username: string;
+  readonly password: string;
   close(): Promise<void>;
 }
 
 const TUNNEL_BUDGET_FACTOR = 4;
+const CHALLENGE = 'Basic realm="pink-bridge"';
+
+/** Compara cabeceras sin filtrar la credencial por tiempo de respuesta. */
+function sameCredential(received: string | undefined, expected: string): boolean {
+  if (received === undefined) {
+    return false;
+  }
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 function portFromHostPort(value: string): { host: string; port: number } | null {
   const index = value.lastIndexOf(":");
@@ -98,7 +113,13 @@ async function handleHttp(
   response: ServerResponse,
   policy: EgressPolicy,
   events: EgressEvents,
+  expected: string,
 ): Promise<void> {
+  if (!sameCredential(request.headers["proxy-authorization"], expected)) {
+    response.writeHead(407, { "proxy-authenticate": CHALLENGE, "content-type": "text/plain" });
+    response.end("Se requiere autenticación del proxy.");
+    return;
+  }
   let target: URL;
   try {
     target = new URL(request.url ?? "");
@@ -165,7 +186,14 @@ async function handleConnect(
   head: Buffer,
   policy: EgressPolicy,
   events: EgressEvents,
+  expected: string,
 ): Promise<void> {
+  if (!sameCredential(request.headers["proxy-authorization"], expected)) {
+    socket.end(
+      `HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: ${CHALLENGE}\r\n\r\n`,
+    );
+    return;
+  }
   const parsed = portFromHostPort(request.url ?? "");
   if (parsed === null) {
     socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -218,13 +246,17 @@ export async function startEgressProxy(policy: EgressPolicy): Promise<EgressProx
     tooLarge: false,
   };
 
+  const username = randomBytes(8).toString("hex");
+  const password = randomBytes(24).toString("hex");
+  const expected = `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+
   const server: Server = createServer((request, response) => {
-    handleHttp(request, response, policy, events).catch(() => {
+    handleHttp(request, response, policy, events, expected).catch(() => {
       rejectHttp(response, 502, false);
     });
   });
   server.on("connect", (request: IncomingMessage, socket: Socket, head: Buffer) => {
-    handleConnect(request, socket, head, policy, events).catch(() => socket.destroy());
+    handleConnect(request, socket, head, policy, events, expected).catch(() => socket.destroy());
   });
 
   await new Promise<void>((resolve, reject) => {
@@ -243,6 +275,8 @@ export async function startEgressProxy(policy: EgressPolicy): Promise<EgressProx
   return {
     port: address.port,
     events,
+    username,
+    password,
     close: () =>
       new Promise<void>((resolve) => {
         server.close(() => {

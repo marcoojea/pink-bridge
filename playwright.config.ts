@@ -25,6 +25,8 @@ export default defineConfig({
       command: "npm run dev -w @pink-bridge/api",
       env: {
         PINK_BRIDGE_ENABLE_DEMO: "1",
+        // Las pruebas crean muchos análisis desde la misma IP: el límite real no debe interferir.
+        PINK_BRIDGE_CREATE_PER_MINUTE: "1000",
         // Base de datos aislada por ejecución: las pruebas no dependen de análisis anteriores.
         PINK_BRIDGE_DB: join(tmpdir(), `pink-bridge-e2e-${String(Date.now())}.sqlite`),
       },

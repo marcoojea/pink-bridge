@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeAxeResults, wcagReferencesFromTags, type RawAxeResults } from "./normalize.js";
+import {
+  MAX_NODES_PER_FINDING,
+  normalizeAxeResults,
+  wcagReferencesFromTags,
+  type RawAxeResults,
+} from "./normalize.js";
 
 const CONTEXT = {
   analysisId: "11111111-1111-4111-8111-111111111111",
@@ -264,5 +269,31 @@ describe("normalizeAxeResults", () => {
     const evidence = result.findings[0]?.nodes[0]?.evidence[0];
     expect(evidence?.content).not.toContain("secreto-123");
     expect(evidence?.redacted).toBe(true);
+  });
+
+  it("guarda como mucho MAX_NODES_PER_FINDING elementos pero cuenta todos", () => {
+    const nodes = Array.from({ length: MAX_NODES_PER_FINDING + 10 }, (_, index) => ({
+      target: [`img.n${String(index)}`],
+      html: `<img class="n${String(index)}">`,
+    }));
+    const result = normalizeAxeResults(
+      raw({
+        violations: [
+          {
+            id: "image-alt",
+            impact: "critical",
+            description: "d",
+            help: "h",
+            tags: [],
+            nodes,
+          },
+        ],
+      }),
+      CONTEXT,
+    );
+    const finding = result.findings[0];
+    expect(finding?.nodes).toHaveLength(MAX_NODES_PER_FINDING);
+    expect(finding?.affectedNodeCount).toBe(MAX_NODES_PER_FINDING + 10);
+    expect(result.summary.affectedNodes).toBe(MAX_NODES_PER_FINDING + 10);
   });
 });

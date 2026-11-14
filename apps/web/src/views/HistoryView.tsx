@@ -21,22 +21,20 @@ export function HistoryView() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    listAnalyses(PAGE_SIZE, offset)
+    const controller = new AbortController();
+    listAnalyses(PAGE_SIZE, offset, controller.signal)
       .then((page) => {
-        if (!cancelled) {
-          setItems(page.items);
-          setTotal(page.total);
-          setError(null);
-        }
+        setItems(page.items);
+        setTotal(page.total);
+        setError(null);
       })
       .catch((caught: unknown) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setError(messageOf(caught));
         }
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [offset]);
 

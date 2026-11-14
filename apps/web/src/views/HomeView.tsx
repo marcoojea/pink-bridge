@@ -1,4 +1,4 @@
-import { useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import type { CreateAnalysisRequest } from "@pink-bridge/shared";
 import { ApiRequestError, createAnalysis } from "../api/client.js";
 import { Glossary } from "../components/Glossary.js";
@@ -28,8 +28,31 @@ export function messageOf(error: unknown): string {
   return "Algo ha salido mal. Vuelve a intentarlo en un momento.";
 }
 
+const DRAFT_KEY = "pink-bridge:borrador-url";
+
+/** Recupera la dirección escrita antes de una recarga. Sin almacenamiento, empieza vacía. */
+function readDraft(): string {
+  try {
+    return window.sessionStorage.getItem(DRAFT_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeDraft(value: string): void {
+  try {
+    if (value === "") {
+      window.sessionStorage.removeItem(DRAFT_KEY);
+    } else {
+      window.sessionStorage.setItem(DRAFT_KEY, value);
+    }
+  } catch {
+    // Sin almacenamiento disponible el borrador simplemente no se guarda.
+  }
+}
+
 export function HomeView() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(readDraft);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,12 +61,17 @@ export function HomeView() {
   const tokenRef = useRef<string>(crypto.randomUUID());
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    writeDraft(url);
+  }, [url]);
+
   async function launch(request: CreateAnalysisRequest): Promise<void> {
     setSubmitting(true);
     setServerError(null);
     try {
       const result = await createAnalysis(request);
       tokenRef.current = crypto.randomUUID();
+      writeDraft("");
       navigateTo(analysisHref(result.analysis.id));
     } catch (error) {
       setServerError(messageOf(error));

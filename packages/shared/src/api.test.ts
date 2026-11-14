@@ -66,6 +66,8 @@ describe("listAnalysesQuerySchema", () => {
 describe("findingsQuerySchema", () => {
   it("acepta filtros combinables y rechaza valores fuera de catálogo", () => {
     expect(findingsQuerySchema.parse({ kind: "automatic", impact: "critical" })).toEqual({
+      limit: 1000,
+      offset: 0,
       kind: "automatic",
       impact: "critical",
     });

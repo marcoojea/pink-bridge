@@ -1,8 +1,17 @@
-import { AnalysisView } from "./views/AnalysisView.js";
-import { ComparisonView } from "./views/ComparisonView.js";
-import { HistoryView } from "./views/HistoryView.js";
+import { lazy, Suspense } from "react";
 import { HomeView } from "./views/HomeView.js";
 import { routeHref, useRoute } from "./router.js";
+
+// Las vistas poco frecuentes se cargan al abrirlas: la portada llega antes.
+const AnalysisView = lazy(() =>
+  import("./views/AnalysisView.js").then((module) => ({ default: module.AnalysisView })),
+);
+const ComparisonView = lazy(() =>
+  import("./views/ComparisonView.js").then((module) => ({ default: module.ComparisonView })),
+);
+const HistoryView = lazy(() =>
+  import("./views/HistoryView.js").then((module) => ({ default: module.HistoryView })),
+);
 
 export function App() {
   const route = useRoute();
@@ -47,21 +56,23 @@ export function App() {
       </header>
       <main id="contenido" tabIndex={-1}>
         <div key={route.name === "analysis" ? route.id : route.name} className="view-enter">
-          {route.name === "home" && <HomeView />}
-          {route.name === "history" && <HistoryView />}
-          {route.name === "analysis" && <AnalysisView key={route.id} id={route.id} />}
-          {route.name === "compare" && (
-            <ComparisonView key={`${route.from}-${route.to}`} from={route.from} to={route.to} />
-          )}
-          {route.name === "notFound" && (
-            <section className="card">
-              <h1 tabIndex={-1}>No encontramos esta página</h1>
-              <p>Puede que la dirección esté mal escrita o que la página ya no exista.</p>
-              <p>
-                <a href={routeHref("home")}>Volver al inicio</a>
-              </p>
-            </section>
-          )}
+          <Suspense fallback={<p role="status">Cargando…</p>}>
+            {route.name === "home" && <HomeView />}
+            {route.name === "history" && <HistoryView />}
+            {route.name === "analysis" && <AnalysisView key={route.id} id={route.id} />}
+            {route.name === "compare" && (
+              <ComparisonView key={`${route.from}-${route.to}`} from={route.from} to={route.to} />
+            )}
+            {route.name === "notFound" && (
+              <section className="card">
+                <h1 tabIndex={-1}>No encontramos esta página</h1>
+                <p>Puede que la dirección esté mal escrita o que la página ya no exista.</p>
+                <p>
+                  <a href={routeHref("home")}>Volver al inicio</a>
+                </p>
+              </section>
+            )}
+          </Suspense>
         </div>
       </main>
     </>

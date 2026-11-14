@@ -219,8 +219,11 @@ describe("Análisis", () => {
       if (url.endsWith("/reviews")) {
         return { status: 200, body: { items: [] } };
       }
-      if (url.endsWith("/findings")) {
-        return { status: 200, body: { items: [makeFinding(), reviewFinding], total: 2 } };
+      if (url.includes("/findings?")) {
+        return {
+          status: 200,
+          body: { items: [makeFinding(), reviewFinding], total: 2, limit: 500, offset: 0 },
+        };
       }
       return {
         status: 200,

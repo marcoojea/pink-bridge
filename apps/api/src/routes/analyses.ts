@@ -81,7 +81,13 @@ export function registerAnalysisRoutes(app: FastifyInstance, service: AnalysisSe
     if (findings === undefined) {
       return reply.code(404).send(createApiError("not_found", "Análisis no encontrado."));
     }
-    const body: FindingsResponse = { items: findings, total: findings.length };
+    const { limit, offset } = query.data;
+    const body: FindingsResponse = {
+      items: findings.slice(offset, offset + limit),
+      total: findings.length,
+      limit,
+      offset,
+    };
     return findingsResponseSchema.parse(body);
   });
 }
