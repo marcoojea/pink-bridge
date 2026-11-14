@@ -1,4 +1,5 @@
 import { apiHref, DEMO, demoRequest } from "../demo.js";
+import { authorizationHeaders } from "./token.js";
 import {
   analysisSchema,
   apiErrorSchema,
@@ -46,6 +47,9 @@ async function send(path: string, init?: RequestInit): Promise<RawResponse> {
   let response: Response;
   try {
     const headers = new Headers(init?.headers);
+    for (const [name, value] of Object.entries(authorizationHeaders())) {
+      headers.set(name, value);
+    }
     headers.set("accept", "application/json");
     response = await fetch(target, { ...init, headers });
   } catch {
@@ -98,7 +102,7 @@ export async function getAgentPromptText(id: string): Promise<string> {
   let response: Response;
   try {
     response = await fetch(apiHref(`/api/analyses/${encodeURIComponent(id)}/agent-prompts`), {
-      headers: { accept: "text/markdown" },
+      headers: { accept: "text/markdown", ...authorizationHeaders() },
     });
   } catch {
     throw new ApiRequestError(0, "network_error", "No se pudo conectar con el servidor.");

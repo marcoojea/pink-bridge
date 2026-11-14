@@ -852,3 +852,20 @@ a.secondary-link {
   background: var(--color-surface);
   font-weight: 500;
 }
+
+/* Campo del token de acceso: plegado en la cabecera, sin ocupar sitio si no se usa. */
+.access {
+  font-size: 0.9rem;
+}
+
+.access-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.access-form input {
+  min-width: 14rem;
+}
