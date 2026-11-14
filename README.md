@@ -160,10 +160,10 @@ docs/
 - **Automatización parcial.** axe-core no detecta todo: el fixture documenta tres defectos que no detecta (ver catálogo). Las pruebas no sustituyen la navegación con teclado, los lectores de pantalla, el zoom ni el reflow, ni las pruebas con personas usuarias.
 - **Estado de la página.** Solo se evalúa el DOM tras la carga. No se cubren flujos interactivos ni contenido que aparece después.
 - **HTTPS tunelizado.** El proxy no puede inspeccionar el contenido de los túneles HTTPS. Los límites de tamaño de esas conexiones son un presupuesto de bytes por túnel, no por respuesta.
-- **Resolución por conexión.** Cada conexión resuelve y valida el nombre en el momento y conecta a esa IP, sin volver a resolver. No hay fijación de DNS entre conexiones distintas del mismo host: cada una se valida por separado. Como defensa en profundidad, el despliegue debería limitar la salida de red del proceso de la API.
+- **Resolución por sesión de análisis.** Dentro de un mismo análisis, cada nombre de host se resuelve una sola vez y todas sus conexiones usan esa respuesta. Cada conexión sigue validando las direcciones contra el guardia de IP antes de conectar, así que un DNS que cambie a mitad del análisis no lleva el tráfico a otro destino. Un fallo de resolución no se guarda, y un análisis nuevo vuelve a resolver. Como defensa en profundidad, el despliegue debería limitar la salida de red del proceso de la API.
 - **Comparación aproximada.** Las coincidencias aproximadas comparan regla y fragmento HTML, no selector; pueden no ser el mismo elemento. Una incidencia "resuelta" no está verificada como corregida.
 - **Revisiones por análisis.** Los estados de revisión son de cada análisis: una nueva ejecución empieza con las incidencias sin revisar.
-- **Acceso y cuotas.** Sin `PINK_BRIDGE_TOKEN` la API no pide autorización. El límite por IP (`PINK_BRIDGE_CREATE_PER_MINUTE`) solo cubre la creación de análisis, y la cola admite 20 pendientes (`429 queue_full`). La interfaz web no envía el token: con token activo, sirve la API tras un proxy que lo añada. No exponer en internet sin control de acceso delante. El arranque rechaza `HOST` no loopback salvo `PINK_BRIDGE_ALLOW_REMOTE=1`.
+- **Acceso y cuotas.** Sin `PINK_BRIDGE_TOKEN` la API no pide autorización. El límite por IP (`PINK_BRIDGE_CREATE_PER_MINUTE`) solo cubre la creación de análisis, y la cola admite 20 pendientes (`429 queue_full`). Con token activo, la interfaz muestra un campo «Token de acceso» en la cabecera. El token se guarda solo en `sessionStorage` (se borra al cerrar la pestaña), nunca va en la URL, y la interfaz lo envía en cada petición y en las descargas. La demostración no tiene ese campo. No exponer en internet sin control de acceso delante. El arranque rechaza `HOST` no loopback salvo `PINK_BRIDGE_ALLOW_REMOTE=1`.
 - **Proxy de salida.** Exige credenciales aleatorias de un solo uso que solo conoce el navegador de cada sesión. El guardia SSRF sigue aplicando: solo alcanza destinos públicos.
 - **Tamaño de hallazgos.** Se guardan como mucho 50 elementos por incidencia; `affectedNodeCount` indica el total real. La API pagina las incidencias.
 - **Evidencias.** Solo se conservan atributos de una lista permitida; el resto se sustituye por `[omitido]` y la query de las URL se oculta.
@@ -171,7 +171,7 @@ docs/
 - **Cola.** Tras un reinicio, los análisis en cola se reanudan. Los que estaban en curso se marcan como interrumpidos y no se reintentan.
 - **Formularios.** Solo se prueban los 3 primeros de cada página, con datos de prueba fijos. Las peticiones no-GET se interceptan; las GET pueden navegar dentro del mismo origen.
 - **Enlaces rotos.** Solo se detectan entre las páginas visitadas por el recorrido.
-- **Pruebas de CI.** El workflow de GitHub Actions ha pasado en verde en GitHub en `d93d42b`; los mismos comandos se han ejecutado en local.
+- **Pruebas de CI.** Los workflows de GitHub Actions (`ci.yml`, `a11y-demo.yml`) estaban en verde en `main` en la última comprobación; el estado actual está en la pestaña Actions del repositorio. Los mismos comandos de `CONTRIBUTING.md` se ejecutan en local.
 
 ## Usarlo en tu CI
 
