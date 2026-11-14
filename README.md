@@ -1,5 +1,7 @@
 # Pink Bridge
 
+> **EN:** Web accessibility audit and QA reporting tool. It analyzes a URL in an isolated Chromium with axe-core, separates automatic findings from checks that need manual review, stores each run, and lets you review, export and compare results. Built with TypeScript, React, Fastify and SQLite. Intended for local or internal use; see the limitations section.
+
 Plataforma de auditoría de accesibilidad web y generación de informes QA. Analiza una URL en un navegador aislado con axe-core, separa las incidencias automáticas de las comprobaciones que requieren revisión manual, guarda cada ejecución y permite revisar, exportar y comparar.
 
 > **Alcance actual:** una URL o un sitio acotado por `maxPages` en el mismo dominio. Sin autenticación ni cuotas: es una herramienta de uso local o interno. Ver [Limitaciones](#limitaciones-y-riesgos-residuales).
