@@ -54,6 +54,9 @@ export interface NormalizedResults {
 
 const MAX_FAILURE_SUMMARY = 400;
 
+/** Elementos guardados por incidencia. El total real queda en affectedNodeCount. */
+export const MAX_NODES_PER_FINDING = 50;
+
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -89,11 +92,15 @@ function buildNodes(
   findingId: string,
 ): { nodes: AffectedNode[]; keys: string[] } {
   const keys: string[] = [];
-  const nodes = rule.nodes.map((node, index): AffectedNode => {
+  const nodes: AffectedNode[] = [];
+  rule.nodes.forEach((node, index) => {
     const target = targetToStrings(node.target);
     const snippet = sanitizeHtmlSnippet(node.html);
     const snippetHash = sha256(snippet.content);
     keys.push(sha256(`${rule.id}|${target.join(">")}|${snippetHash}`));
+    if (index >= MAX_NODES_PER_FINDING) {
+      return;
+    }
 
     const evidence: Evidence[] = [
       { type: "html_snippet", content: snippet.content, redacted: snippet.redacted },
@@ -106,13 +113,13 @@ function buildNodes(
       });
     }
 
-    return {
+    nodes.push({
       id: `${findingId}:${String(index)}`,
       findingId,
       target,
       selector: target.join(" > "),
       evidence,
-    };
+    });
   });
   return { nodes, keys };
 }
@@ -146,7 +153,7 @@ function buildFinding(
     helpUrl: rule.helpUrl?.startsWith("https://") ? rule.helpUrl : null,
     impact: toImpact(rule.impact),
     wcagReferences: wcagReferencesFromTags(rule.tags),
-    affectedNodeCount: nodes.length,
+    affectedNodeCount: rule.nodes.length,
     recommendation: explanation.recommendation,
     detectedAt: context.detectedAt,
     fingerprint: {

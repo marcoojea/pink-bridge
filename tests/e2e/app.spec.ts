@@ -248,3 +248,20 @@ test("el recorrido de sitio muestra el resumen con páginas auditadas", async ({
     page.getByRole("link", { name: "Instrucciones para un asistente de programación (Markdown)" }),
   ).toBeVisible();
 });
+
+test("copiar las instrucciones para el asistente confirma la copia", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await runDemo(page);
+  await page.getByRole("button", { name: "Copiar instrucciones para el asistente" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Instrucciones copiadas" }),
+  ).toBeVisible();
+});
+
+test("los filtros de problemas se conservan al recargar la página", async ({ page }) => {
+  await runDemo(page);
+  await page.getByLabel("Gravedad").selectOption("critical");
+  await expect(page).toHaveURL(/gravedad=critical/);
+  await page.reload();
+  await expect(page.getByLabel("Gravedad")).toHaveValue("critical");
+});

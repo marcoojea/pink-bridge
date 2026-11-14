@@ -99,8 +99,13 @@ export async function getAgentPromptText(id: string): Promise<string> {
   return response.text();
 }
 
-export async function getAnalysis(id: string): Promise<Analysis> {
-  const response = await send(`/api/analyses/${encodeURIComponent(id)}`);
+/** Cancela la petición cuando el componente que la pidió ya no existe. */
+function withSignal(signal?: AbortSignal): RequestInit {
+  return signal ? { signal } : {};
+}
+
+export async function getAnalysis(id: string, signal?: AbortSignal): Promise<Analysis> {
+  const response = await send(`/api/analyses/${encodeURIComponent(id)}`, withSignal(signal));
   const parsed = analysisSchema.safeParse(response.body);
   if (!parsed.success) {
     throw invalidResponse();
@@ -108,8 +113,15 @@ export async function getAnalysis(id: string): Promise<Analysis> {
   return parsed.data;
 }
 
-export async function listAnalyses(limit = 20, offset = 0): Promise<ListAnalysesResponse> {
-  const response = await send(`/api/analyses?limit=${String(limit)}&offset=${String(offset)}`);
+export async function listAnalyses(
+  limit = 20,
+  offset = 0,
+  signal?: AbortSignal,
+): Promise<ListAnalysesResponse> {
+  const response = await send(
+    `/api/analyses?limit=${String(limit)}&offset=${String(offset)}`,
+    withSignal(signal),
+  );
   const parsed = listAnalysesResponseSchema.safeParse(response.body);
   if (!parsed.success) {
     throw invalidResponse();
@@ -117,28 +129,52 @@ export async function listAnalyses(limit = 20, offset = 0): Promise<ListAnalyses
   return parsed.data;
 }
 
-export async function getFindings(id: string, query: FindingsQuery = {}): Promise<Finding[]> {
-  const params = new URLSearchParams();
-  if (query.kind) {
-    params.set("kind", query.kind);
+/** Tamaño de página al pedir incidencias: el servidor lo admite hasta su máximo. */
+const FINDINGS_PAGE = 500;
+
+/** Pide todas las incidencias del filtro, página a página. */
+export async function getFindings(
+  id: string,
+  query: FindingsQuery = {},
+  signal?: AbortSignal,
+): Promise<Finding[]> {
+  const items: Finding[] = [];
+  let total = Number.POSITIVE_INFINITY;
+  while (items.length < total) {
+    const params = new URLSearchParams();
+    if (query.kind) {
+      params.set("kind", query.kind);
+    }
+    if (query.impact) {
+      params.set("impact", query.impact);
+    }
+    if (query.ruleId) {
+      params.set("ruleId", query.ruleId);
+    }
+    params.set("limit", String(FINDINGS_PAGE));
+    params.set("offset", String(items.length));
+    const response = await send(
+      `/api/analyses/${encodeURIComponent(id)}/findings?${params.toString()}`,
+      withSignal(signal),
+    );
+    const parsed = findingsResponseSchema.safeParse(response.body);
+    if (!parsed.success) {
+      throw invalidResponse();
+    }
+    total = parsed.data.total;
+    if (parsed.data.items.length === 0) {
+      break;
+    }
+    items.push(...parsed.data.items);
   }
-  if (query.impact) {
-    params.set("impact", query.impact);
-  }
-  if (query.ruleId) {
-    params.set("ruleId", query.ruleId);
-  }
-  const suffix = params.size > 0 ? `?${params.toString()}` : "";
-  const response = await send(`/api/analyses/${encodeURIComponent(id)}/findings${suffix}`);
-  const parsed = findingsResponseSchema.safeParse(response.body);
-  if (!parsed.success) {
-    throw invalidResponse();
-  }
-  return parsed.data.items;
+  return items;
 }
 
-export async function getReviews(analysisId: string): Promise<ReviewState[]> {
-  const response = await send(`/api/analyses/${encodeURIComponent(analysisId)}/reviews`);
+export async function getReviews(analysisId: string, signal?: AbortSignal): Promise<ReviewState[]> {
+  const response = await send(
+    `/api/analyses/${encodeURIComponent(analysisId)}/reviews`,
+    withSignal(signal),
+  );
   const parsed = reviewsResponseSchema.safeParse(response.body);
   if (!parsed.success) {
     throw invalidResponse();
@@ -162,9 +198,13 @@ export async function saveReview(
   return parsed.data;
 }
 
-export async function compareAnalyses(fromId: string, toId: string): Promise<ComparisonResult> {
+export async function compareAnalyses(
+  fromId: string,
+  toId: string,
+  signal?: AbortSignal,
+): Promise<ComparisonResult> {
   const params = new URLSearchParams({ from: fromId, to: toId });
-  const response = await send(`/api/analyses/compare?${params.toString()}`);
+  const response = await send(`/api/analyses/compare?${params.toString()}`, withSignal(signal));
   const parsed = comparisonResultSchema.safeParse(response.body);
   if (!parsed.success) {
     throw invalidResponse();

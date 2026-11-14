@@ -25,6 +25,34 @@ import {
 import { normalizeTargetUrl } from "../analyzer/urlPolicy.js";
 import type { AnalysisRecord, AnalysisStore, FindingFilter } from "./store.js";
 
+/** Duración de cada etapa de una revisión, para saber dónde se gasta el tiempo. */
+class StageTimings {
+  private readonly marks: { stage: string; at: number }[] = [];
+  private readonly clock: () => Date;
+
+  constructor(clock: () => Date) {
+    this.clock = clock;
+  }
+
+  mark(stage: string): void {
+    this.marks.push({ stage, at: this.clock().getTime() });
+  }
+
+  total(): number {
+    const first = this.marks[0]?.at ?? this.clock().getTime();
+    return this.clock().getTime() - first;
+  }
+
+  report(): Record<string, number> {
+    const durations: Record<string, number> = {};
+    this.marks.forEach((mark, index) => {
+      const next = this.marks[index + 1]?.at ?? this.clock().getTime();
+      durations[mark.stage] = next - mark.at;
+    });
+    return durations;
+  }
+}
+
 export class ServiceError extends Error {
   constructor(
     readonly status: 404 | 409 | 429,
@@ -38,6 +66,7 @@ export class ServiceError extends Error {
 
 export interface AnalysisLogger {
   error(context: Record<string, unknown>, message: string): void;
+  info?(context: Record<string, unknown>, message: string): void;
 }
 
 export interface AnalysisServiceOptions {
@@ -287,7 +316,13 @@ export class AnalysisService {
   async recoverInterrupted(): Promise<number> {
     const pending = await this.store.listByStatus(["queued", "running"]);
     const finishedAt = this.now().toISOString();
+    let failed = 0;
     for (const record of pending) {
+      if (record.status === "queued") {
+        // Nunca llegó a empezar: se retoma desde la cola persistida, sin perder la petición.
+        this.enqueue(record.id);
+        continue;
+      }
       await this.store.updateAnalysis(record.id, {
         status: "failed",
         stage: null,
@@ -295,8 +330,9 @@ export class AnalysisService {
         errorCode: "interrupted",
         errorMessage: SAFE_MESSAGES.interrupted,
       });
+      failed += 1;
     }
-    return pending.length;
+    return failed;
   }
 
   /** Espera a que la cola quede vacía. Útil en pruebas y para un cierre ordenado. */
@@ -411,12 +447,14 @@ export class AnalysisService {
         ? { kind: "demo", fixturePath: this.demoFixturePath }
         : { kind: "url", url: new URL(record.normalizedUrl) };
 
+    const timings = new StageTimings(this.now);
     try {
       const result = await this.runner({
         source,
         ...(this.runLimits !== undefined ? { limits: this.runLimits } : {}),
         ...(this.allowedPorts !== undefined ? { allowedPorts: this.allowedPorts } : {}),
         onStage: (stage: AnalysisStage) => {
+          timings.mark(stage);
           this.store.updateAnalysis(id, { stage }).catch(() => undefined);
         },
       });
@@ -445,6 +483,10 @@ export class AnalysisService {
         errorCode: null,
         errorMessage: null,
       });
+      this.logger?.info?.(
+        { analysisId: id, mode: "page", durationMs: timings.total(), stages: timings.report() },
+        "Revisión completada",
+      );
     } catch (error) {
       await this.fail(id, startedAt, error);
     }
