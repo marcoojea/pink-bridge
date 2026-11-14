@@ -6,7 +6,9 @@ type CopyState =
   | { readonly kind: "idle" }
   | { readonly kind: "busy" }
   | { readonly kind: "done" }
-  | { readonly kind: "error"; readonly message: string };
+  | { readonly kind: "error"; readonly message: string }
+  // Sin portapapeles: el texto queda visible y seleccionable para copiarlo a mano.
+  | { readonly kind: "manual"; readonly text: string; readonly message: string };
 
 const NO_CLIPBOARD = "Este navegador no permite copiar al portapapeles.";
 const DOWNLOAD_HINT = "Descarga el archivo con el enlace de arriba.";
@@ -27,14 +29,14 @@ export function AgentPromptPanel({ analysisId }: { readonly analysisId: string }
     }
     const clipboard = navigator.clipboard as Clipboard | undefined;
     if (clipboard === undefined) {
-      setCopy({ kind: "error", message: `${NO_CLIPBOARD} ${DOWNLOAD_HINT}` });
+      setCopy({ kind: "manual", text, message: NO_CLIPBOARD });
       return;
     }
     try {
       await clipboard.writeText(text);
       setCopy({ kind: "done" });
     } catch {
-      setCopy({ kind: "error", message: `No se pudo copiar. ${DOWNLOAD_HINT}` });
+      setCopy({ kind: "manual", text, message: "No se pudo copiar automáticamente." });
     }
   }
 
@@ -56,6 +58,21 @@ export function AgentPromptPanel({ analysisId }: { readonly analysisId: string }
         <p role="status" className="notice">
           Instrucciones copiadas. Pégalas en Claude Code o Codex.
         </p>
+      )}
+      {copy.kind === "manual" && (
+        <div className="notice">
+          <p>{copy.message} Selecciona el texto de abajo y cópialo con Ctrl+C o Cmd+C.</p>
+          <textarea
+            className="prompt-text"
+            readOnly
+            rows={8}
+            aria-label="Instrucciones para el asistente"
+            value={copy.text}
+            onFocus={(event) => {
+              event.currentTarget.select();
+            }}
+          />
+        </div>
       )}
       {copy.kind === "error" && (
         <p role="alert" className="notice notice-error">

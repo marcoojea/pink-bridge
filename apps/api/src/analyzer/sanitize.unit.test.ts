@@ -43,6 +43,32 @@ describe("sanitizeHtmlSnippet", () => {
   });
 });
 
+describe("sanitizeHtmlSnippet (lista permitida)", () => {
+  it("sustituye por [omitido] los atributos que no están en la lista permitida", () => {
+    const result = sanitizeHtmlSnippet('<div data-user="ana" class="caja">x</div>');
+    expect(result.content).toBe('<div data-user="[omitido]" class="caja">x</div>');
+    expect(result.redacted).toBe(true);
+  });
+
+  it("oculta el contenido de meta content", () => {
+    const result = sanitizeHtmlSnippet('<meta name="author" content="Ana García">');
+    expect(result.content).not.toContain("Ana");
+    expect(result.redacted).toBe(true);
+  });
+
+  it("conserva la ruta de href y oculta la query", () => {
+    const result = sanitizeHtmlSnippet('<a href="/reset?token=abc123">Cambiar</a>');
+    expect(result.content).toBe('<a href="/reset?[omitido]">Cambiar</a>');
+    expect(result.content).not.toContain("abc123");
+    expect(result.redacted).toBe(true);
+  });
+
+  it("no marca como redactado un href sin query", () => {
+    const result = sanitizeHtmlSnippet('<a href="/ayuda">Ayuda</a>');
+    expect(result.redacted).toBe(false);
+  });
+});
+
 describe("sanitizeHtmlSnippet (endurecimiento)", () => {
   it("redacta atributos con token, api key o csrf en cualquier posición del nombre", () => {
     const result = sanitizeHtmlSnippet('<input data-token="abc" x-api-key="k1" csrf-token="c2">');

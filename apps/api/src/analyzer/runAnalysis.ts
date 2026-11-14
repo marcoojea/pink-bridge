@@ -2,9 +2,21 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
-import { chromium, type Browser, type Page, type Request, type Route } from "playwright";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type Request,
+  type Route,
+} from "playwright";
 import type { AnalysisErrorCode, AnalysisStage } from "@pink-bridge/shared";
-import { BLOCKED_HEADER, startEgressProxy, type EgressEvents } from "./egressProxy.js";
+import {
+  BLOCKED_HEADER,
+  startEgressProxy,
+  type EgressEvents,
+  type EgressProxy,
+} from "./egressProxy.js";
 import {
   collectLinks,
   observe,
@@ -47,17 +59,34 @@ export type RunSource =
       readonly siteRoot?: string;
     };
 
-export interface RunOptions {
-  readonly source: RunSource;
+/** Opciones que definen la red y el navegador; se comparten entre las páginas de una sesión. */
+export interface SessionOptions {
   readonly resolve?: Resolver;
   readonly allowedPorts?: readonly number[];
   readonly limits?: Partial<RunLimits>;
-  readonly onStage?: (stage: AnalysisStage) => void;
   /**
    * SOLO PRUEBAS. Hosts exentos del guardia SSRF para probar la ruta de éxito contra
    * un servidor local. No se expone desde la API ni desde la configuración.
    */
   readonly testOnlyTrustedHosts?: readonly string[];
+}
+
+/**
+ * Proxy de salida y navegador compartidos por varias páginas. Cada página sigue en su propio
+ * contexto aislado; lo que se comparte es el arranque de Chromium, que es lo caro.
+ */
+export interface BrowserSession {
+  readonly proxy: EgressProxy;
+  readonly browser: Browser;
+  readonly limits: RunLimits;
+  close(): Promise<void>;
+}
+
+export interface RunOptions extends SessionOptions {
+  readonly source: RunSource;
+  readonly onStage?: (stage: AnalysisStage) => void;
+  /** Sesión ya abierta. Si se omite, la auditoría abre y cierra la suya. */
+  readonly session?: BrowserSession;
   /** Tamaño de ventana. Por defecto, escritorio 1280×800. */
   readonly viewport?: { readonly width: number; readonly height: number };
   /** Ejecuta sondas: enlaces, formularios (con mutaciones interceptadas). */
@@ -221,38 +250,80 @@ function mapError(
   return new AnalysisRunError("browser_error", "No se pudo preparar el navegador de análisis.");
 }
 
-async function closeQuietly(browser: Browser | null): Promise<void> {
-  if (!browser) {
+async function closeQuietly(target: { close(): Promise<void> } | null): Promise<void> {
+  if (!target) {
     return;
   }
   try {
-    await browser.close();
+    await target.close();
   } catch {
-    // El navegador puede estar ya cerrado por el temporizador de tiempo total.
+    // El navegador o el contexto puede estar ya cerrado por el temporizador de tiempo total.
   }
 }
 
 /**
- * Ejecuta una auditoría axe-core sobre una única página en un navegador aislado.
+ * Abre el proxy de salida y lanza Chromium una vez. El proxy exige credenciales aleatorias,
+ * de modo que solo este navegador puede usarlo.
+ */
+export async function openSession(options: SessionOptions): Promise<BrowserSession> {
+  const limits: RunLimits = { ...DEFAULT_LIMITS, ...options.limits };
+  const proxy = await startEgressProxy({
+    resolve: options.resolve ?? systemResolver,
+    allowedPorts: options.allowedPorts ?? DEFAULT_ALLOWED_PORTS,
+    trustedHosts: new Set((options.testOnlyTrustedHosts ?? []).map(normalizeHostname)),
+    maxBytes: limits.maxResponseBytes,
+  });
+
+  let browser: Browser;
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: ["--force-webrtc-ip-handling-policy=disable_non_proxied_udp"],
+      chromiumSandbox: true,
+      proxy: {
+        server: `http://127.0.0.1:${String(proxy.port)}`,
+        bypass: "<-loopback>",
+        username: proxy.username,
+        password: proxy.password,
+      },
+    });
+  } catch (error) {
+    await proxy.close();
+    throw mapError(error, { events: proxy.events, startHost: null, timedOut: false }, "browser");
+  }
+
+  return {
+    proxy,
+    browser,
+    limits,
+    close: async () => {
+      await closeQuietly(browser);
+      await proxy.close();
+    },
+  };
+}
+
+/**
+ * Ejecuta una auditoría axe-core sobre una única página en un contexto de navegador aislado.
  * Todo el tráfico de red de la página sale por un proxy local que valida cada conexión
  * (documento, redirecciones y subrecursos), resuelve DNS una sola vez y conecta a la IP validada.
  */
 export async function runAnalysis(options: RunOptions): Promise<RunResult> {
-  const limits: RunLimits = { ...DEFAULT_LIMITS, ...options.limits };
-  const resolve = options.resolve ?? systemResolver;
-  const allowedPorts = options.allowedPorts ?? DEFAULT_ALLOWED_PORTS;
-  const trustedHosts = new Set((options.testOnlyTrustedHosts ?? []).map(normalizeHostname));
-  const startedAt = Date.now();
-
+  if (options.session !== undefined) {
+    return runPage(options, options.session);
+  }
   options.onStage?.("preparing_browser");
+  const session = await openSession(options);
+  try {
+    return await runPage(options, session);
+  } finally {
+    await session.close();
+  }
+}
 
-  const proxy = await startEgressProxy({
-    resolve,
-    allowedPorts,
-    trustedHosts,
-    maxBytes: limits.maxResponseBytes,
-  });
-
+async function runPage(options: RunOptions, session: BrowserSession): Promise<RunResult> {
+  const { proxy, browser, limits } = session;
+  const startedAt = Date.now();
   const context: RunContext = {
     events: proxy.events,
     startHost:
@@ -260,25 +331,14 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
     timedOut: false,
   };
 
-  let browser: Browser | null = null;
+  let browserContext: BrowserContext | null = null;
   const totalTimer = setTimeout(() => {
     context.timedOut = true;
-    void closeQuietly(browser);
+    void closeQuietly(browserContext);
   }, limits.totalMs);
 
   try {
-    try {
-      browser = await chromium.launch({
-        headless: true,
-        args: ["--force-webrtc-ip-handling-policy=disable_non_proxied_udp"],
-        chromiumSandbox: true,
-        proxy: { server: `http://127.0.0.1:${String(proxy.port)}`, bypass: "<-loopback>" },
-      });
-    } catch (error) {
-      throw mapError(error, context, "browser");
-    }
-
-    const browserContext = await browser.newContext({
+    browserContext = await browser.newContext({
       serviceWorkers: "block",
       acceptDownloads: false,
       permissions: [],
@@ -287,9 +347,10 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
       locale: "es-ES",
     });
 
+    const source = options.source;
     const guard: MutationGuard = { active: false, intercepted: 0 };
     await browserContext.route("**/*", (route, request) => {
-      routeRequest(route, request, options.source, guard).catch(() => route.abort("failed"));
+      routeRequest(route, request, source, guard).catch(() => route.abort("failed"));
     });
 
     const page: Page = await browserContext.newPage();
@@ -361,7 +422,6 @@ export async function runAnalysis(options: RunOptions): Promise<RunResult> {
     throw mapError(error, context, "browser");
   } finally {
     clearTimeout(totalTimer);
-    await closeQuietly(browser);
-    await proxy.close();
+    await closeQuietly(browserContext);
   }
 }

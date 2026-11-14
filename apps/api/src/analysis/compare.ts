@@ -8,6 +8,12 @@ import {
   type ImpactCounts,
 } from "@pink-bridge/shared";
 
+/** Lo mínimo para emparejar: lo comparten los análisis guardados y las líneas base del CLI. */
+export type ComparableFinding = Pick<
+  Finding,
+  "id" | "ruleId" | "impact" | "affectedNodeCount" | "fingerprint"
+>;
+
 const IMPACT_ORDER: Readonly<Record<Impact, number>> = {
   critical: 0,
   serious: 1,
@@ -23,29 +29,33 @@ export const COMPARISON_LIMITATIONS: readonly string[] = [
   "Cada análisis evalúa la página en el momento de la carga; no recoge estados tras interacción del usuario.",
 ];
 
-function keyStrong(finding: Finding): string {
+function keyStrong(finding: ComparableFinding): string {
   return finding.fingerprint.strong;
 }
 
-function keyLoose(finding: Finding): string {
+function keyLoose(finding: ComparableFinding): string {
   return finding.fingerprint.loose;
 }
 
 /** Empareja una a una las incidencias por una clave. Devuelve los pares y lo que queda sin pareja. */
 function pairByKey(
-  baseline: readonly Finding[],
-  target: readonly Finding[],
-  keyOf: (finding: Finding) => string,
-): { pairs: [Finding, Finding][]; restBaseline: Finding[]; restTarget: Finding[] } {
-  const index = new Map<string, Finding[]>();
+  baseline: readonly ComparableFinding[],
+  target: readonly ComparableFinding[],
+  keyOf: (finding: ComparableFinding) => string,
+): {
+  pairs: [ComparableFinding, ComparableFinding][];
+  restBaseline: ComparableFinding[];
+  restTarget: ComparableFinding[];
+} {
+  const index = new Map<string, ComparableFinding[]>();
   for (const finding of target) {
     const bucket = index.get(keyOf(finding)) ?? [];
     bucket.push(finding);
     index.set(keyOf(finding), bucket);
   }
 
-  const pairs: [Finding, Finding][] = [];
-  const restBaseline: Finding[] = [];
+  const pairs: [ComparableFinding, ComparableFinding][] = [];
+  const restBaseline: ComparableFinding[] = [];
   const used = new Set<string>();
   for (const finding of baseline) {
     const candidate = (index.get(keyOf(finding)) ?? []).find((item) => !used.has(item.id));
@@ -74,8 +84,8 @@ function sortByGravity(entries: ComparisonEntry[]): ComparisonEntry[] {
  * Primero empareja por huella fuerte (exacta) y después por huella débil (aproximada).
  */
 export function matchFindings(
-  baseline: readonly Finding[],
-  target: readonly Finding[],
+  baseline: readonly ComparableFinding[],
+  target: readonly ComparableFinding[],
 ): Pick<ComparisonResult, "newFindings" | "resolvedFindings" | "persistentFindings"> {
   const strong = pairByKey(baseline, target, keyStrong);
   const loose = pairByKey(strong.restBaseline, strong.restTarget, keyLoose);
@@ -95,7 +105,7 @@ export function matchFindings(
 }
 
 function entry(
-  finding: Finding,
+  finding: ComparableFinding,
   matchType: ComparisonEntry["matchType"],
   baselineFindingId: string | null,
   targetFindingId: string | null,

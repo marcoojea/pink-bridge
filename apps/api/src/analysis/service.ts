@@ -12,8 +12,8 @@ import type {
 } from "@pink-bridge/shared";
 import { compareAnalyses } from "./compare.js";
 import { normalizeAxeResults } from "../analyzer/normalize.js";
-import { pageErrorFinding, qaFindings } from "../analyzer/qa.js";
-import { runSite, type PageOutcome } from "../analyzer/site.js";
+import { runSite } from "../analyzer/site.js";
+import { siteFindings, summarizeFindings } from "../analyzer/audit.js";
 import {
   AnalysisRunError,
   DEMO_ORIGIN,
@@ -24,6 +24,34 @@ import {
 } from "../analyzer/runAnalysis.js";
 import { normalizeTargetUrl } from "../analyzer/urlPolicy.js";
 import type { AnalysisRecord, AnalysisStore, FindingFilter } from "./store.js";
+
+/** Duración de cada etapa de una revisión, para saber dónde se gasta el tiempo. */
+class StageTimings {
+  private readonly marks: { stage: string; at: number }[] = [];
+  private readonly clock: () => Date;
+
+  constructor(clock: () => Date) {
+    this.clock = clock;
+  }
+
+  mark(stage: string): void {
+    this.marks.push({ stage, at: this.clock().getTime() });
+  }
+
+  total(): number {
+    const first = this.marks[0]?.at ?? this.clock().getTime();
+    return this.clock().getTime() - first;
+  }
+
+  report(): Record<string, number> {
+    const durations: Record<string, number> = {};
+    this.marks.forEach((mark, index) => {
+      const next = this.marks[index + 1]?.at ?? this.clock().getTime();
+      durations[mark.stage] = next - mark.at;
+    });
+    return durations;
+  }
+}
 
 export class ServiceError extends Error {
   constructor(
@@ -38,6 +66,7 @@ export class ServiceError extends Error {
 
 export interface AnalysisLogger {
   error(context: Record<string, unknown>, message: string): void;
+  info?(context: Record<string, unknown>, message: string): void;
 }
 
 export interface AnalysisServiceOptions {
@@ -287,7 +316,13 @@ export class AnalysisService {
   async recoverInterrupted(): Promise<number> {
     const pending = await this.store.listByStatus(["queued", "running"]);
     const finishedAt = this.now().toISOString();
+    let failed = 0;
     for (const record of pending) {
+      if (record.status === "queued") {
+        // Nunca llegó a empezar: se retoma desde la cola persistida, sin perder la petición.
+        this.enqueue(record.id);
+        continue;
+      }
       await this.store.updateAnalysis(record.id, {
         status: "failed",
         stage: null,
@@ -295,8 +330,9 @@ export class AnalysisService {
         errorCode: "interrupted",
         errorMessage: SAFE_MESSAGES.interrupted,
       });
+      failed += 1;
     }
-    return pending.length;
+    return failed;
   }
 
   /** Espera a que la cola quede vacía. Útil en pruebas y para un cierre ordenado. */
@@ -411,12 +447,14 @@ export class AnalysisService {
         ? { kind: "demo", fixturePath: this.demoFixturePath }
         : { kind: "url", url: new URL(record.normalizedUrl) };
 
+    const timings = new StageTimings(this.now);
     try {
       const result = await this.runner({
         source,
         ...(this.runLimits !== undefined ? { limits: this.runLimits } : {}),
         ...(this.allowedPorts !== undefined ? { allowedPorts: this.allowedPorts } : {}),
         onStage: (stage: AnalysisStage) => {
+          timings.mark(stage);
           this.store.updateAnalysis(id, { stage }).catch(() => undefined);
         },
       });
@@ -445,6 +483,10 @@ export class AnalysisService {
         errorCode: null,
         errorMessage: null,
       });
+      this.logger?.info?.(
+        { analysisId: id, mode: "page", durationMs: timings.total(), stages: timings.report() },
+        "Revisión completada",
+      );
     } catch (error) {
       await this.fail(id, startedAt, error);
     }
@@ -467,37 +509,10 @@ export class AnalysisService {
 
       await this.store.updateAnalysis(id, { stage: "processing_results" });
       const detectedAt = this.now().toISOString();
-      const findings: Finding[] = [];
-      let axeVersion: string | null = null;
-      let passedRules = 0;
-
-      site.pages.forEach((page: PageOutcome, index: number) => {
-        const ctx = {
-          analysisId: id,
-          detectedAt,
-          pageUrl: page.url,
-          viewport: page.viewport,
-          scope: `p${String(index)}:${page.viewport}`,
-        };
-        if (!page.ok) {
-          findings.push(pageErrorFinding(ctx, page.code, page.message, page.httpStatus));
-          return;
-        }
-        axeVersion ??= page.run.raw.testEngine.version;
-        passedRules += page.run.raw.passes.length;
-        findings.push(...normalizeAxeResults(page.run.raw, ctx).findings);
-        findings.push(
-          ...qaFindings(
-            {
-              observations: page.run.observations,
-              forms: page.run.forms,
-              brokenLinks:
-                page.viewport === "desktop" ? (site.brokenLinks.get(page.url) ?? []) : [],
-            },
-            ctx,
-          ),
-        );
-      });
+      const built = siteFindings(site, id, detectedAt);
+      const findings = built.findings;
+      const axeVersion = built.axeVersion;
+      const passedRules = built.passedRules;
 
       if (!site.pages.some((page) => page.ok)) {
         const failure = site.pages.find((page) => !page.ok);
@@ -511,11 +526,7 @@ export class AnalysisService {
       await this.store.updateAnalysis(id, { stage: "saving_report" });
       await this.store.insertFindings(id, findings);
 
-      const automatic = findings.filter((finding) => finding.kind === "automatic");
-      const byImpact = { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 };
-      for (const finding of automatic) {
-        byImpact[finding.impact] += 1;
-      }
+      const summary = summarizeFindings(findings, passedRules, site.pagesVisited);
       const finishedAt = this.now();
       await this.store.updateAnalysis(id, {
         status: "completed",
@@ -523,15 +534,7 @@ export class AnalysisService {
         finishedAt: finishedAt.toISOString(),
         durationMs: finishedAt.getTime() - startedAt.getTime(),
         axeVersion,
-        summary: {
-          automaticRules: new Set(automatic.map((finding) => finding.ruleId)).size,
-          automaticFindings: automatic.length,
-          affectedNodes: automatic.reduce((total, finding) => total + finding.affectedNodeCount, 0),
-          needsReview: findings.length - automatic.length,
-          passedRules,
-          byImpact,
-          pagesAnalyzed: site.pagesVisited,
-        },
+        summary,
         errorCode: null,
         errorMessage: null,
       });

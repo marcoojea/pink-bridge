@@ -244,8 +244,8 @@ describe("migraciones", () => {
 });
 
 describe("persistencia tras reinicio", () => {
-  it("un análisis queued sobrevive a un reinicio y se marca como interrumpido", async () => {
-    const pending = record({ status: "queued" });
+  it("un análisis en curso sobrevive a un reinicio y se marca como interrumpido", async () => {
+    const pending = record({ status: "running" });
     await store.insertAnalysis(pending);
     store.close();
 

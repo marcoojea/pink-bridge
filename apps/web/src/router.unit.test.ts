@@ -38,3 +38,10 @@ describe("parseRoute", () => {
     expect(parseRoute(analysisHref(ID))).toEqual({ name: "analysis", id: ID });
   });
 });
+
+describe("query del hash", () => {
+  it("ignora la query al resolver la ruta", () => {
+    expect(parseRoute("#/historial?tipo=automatic")).toEqual({ name: "history" });
+    expect(parseRoute("#/?x=1")).toEqual({ name: "home" });
+  });
+});

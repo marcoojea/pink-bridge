@@ -1,0 +1,65 @@
+name: Auditoría de accesibilidad (ejemplo para tu proyecto)
+
+# Plantilla. Se lanza a mano (workflow_dispatch) para que no bloquee tus pull requests
+# hasta que la hayas adaptado. Para activarla en cada pull request:
+#   1. Genera la línea base de tu web en una rama estable:
+#        npm run cli -- audit https://tu-web.example --write-baseline .github/a11y/baseline.json
+#   2. Versiona .github/a11y/baseline.json.
+#   3. Sustituye workflow_dispatch por:  pull_request:
+#   4. Cambia el input por la URL de preproducción de tu web (o fija TARGET_URL en env).
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Página a auditar (https://…)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # El CLI importa @pink-bridge/shared desde dist/: hay que compilarlo antes en un runner limpio.
+      - run: npm run build:shared
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Habilitar sandbox de Chromium en el runner
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      # La URL entra por variable de entorno, no interpolada en el script: evita inyección.
+      - name: Auditar frente a la línea base
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: |
+          npm run cli -- audit "$TARGET_URL" \
+            --baseline .github/a11y/baseline.json \
+            --fail-on-new --min-impact serious \
+            --report a11y-report
+
+      - name: Subir informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: a11y-report/
+          if-no-files-found: ignore
+          retention-days: 14

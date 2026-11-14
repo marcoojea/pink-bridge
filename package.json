@@ -2,6 +2,7 @@
   "name": "pink-bridge",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Plataforma de auditoría de accesibilidad web y generación de informes QA",
   "type": "module",
   "engines": {
@@ -16,6 +17,7 @@
     "build:shared": "npm run build -w @pink-bridge/shared",
     "dev:api": "npm run build:shared && npm run dev -w @pink-bridge/api",
     "dev:web": "npm run build:shared && npm run dev -w @pink-bridge/web",
+    "cli": "tsx apps/api/src/cli/main.ts",
     "build": "npm run build:shared && npm run build --workspaces --if-present",
     "lint": "npm run build:shared && eslint .",
     "format": "prettier --write .",
