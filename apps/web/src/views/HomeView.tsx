@@ -4,6 +4,7 @@ import { ApiRequestError, createAnalysis } from "../api/client.js";
 import { Glossary } from "../components/Glossary.js";
 import { analysisHref, navigateTo, routeHref } from "../router.js";
 
+import { DEMO } from "../demo.js";
 export function localUrlError(value: string): string | null {
   const trimmed = value.trim();
   if (trimmed === "") {
@@ -147,7 +148,7 @@ export function HomeView() {
             }}
             aria-invalid={fieldError !== null}
             aria-describedby={fieldError !== null ? "url-error url-hint" : "url-hint"}
-            disabled={submitting}
+            disabled={submitting || DEMO}
           />
           {fieldError !== null && (
             <p id="url-error" className="field-error">
@@ -214,7 +215,7 @@ export function HomeView() {
         </fieldset>
 
         <div className="actions">
-          <button type="submit" disabled={submitting}>
+          <button type="submit" disabled={submitting || DEMO}>
             {submitting ? "Revisando…" : site ? "Revisar el sitio" : "Revisar la página"}
           </button>
         </div>
@@ -232,10 +233,20 @@ export function HomeView() {
           Son páginas de prueba con problemas conocidos. No necesitas escribir ninguna dirección.
         </p>
         <div className="secondary-actions">
-          <button type="button" className="secondary" onClick={onDemo} disabled={submitting}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={onDemo}
+            disabled={submitting || DEMO}
+          >
             Ver un ejemplo de página
           </button>
-          <button type="button" className="secondary" onClick={onDemoSite} disabled={submitting}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={onDemoSite}
+            disabled={submitting || DEMO}
+          >
             Ver un ejemplo de sitio
           </button>
         </div>

@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config";
 const API_TARGET = "http://127.0.0.1:3001";
 
 export default defineConfig({
+  // En GitHub Pages la demo vive en /pink-bridge/; en local y en Docker, en la raíz.
+  base: process.env.VITE_BASE ?? "/",
   plugins: [react()],
   server: {
     host: "127.0.0.1",

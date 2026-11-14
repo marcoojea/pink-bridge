@@ -3,6 +3,7 @@ import { HomeView } from "./views/HomeView.js";
 import { routeHref, useRoute } from "./router.js";
 
 // Las vistas poco frecuentes se cargan al abrirlas: la portada llega antes.
+import { DEMO } from "./demo.js";
 const AnalysisView = lazy(() =>
   import("./views/AnalysisView.js").then((module) => ({ default: module.AnalysisView })),
 );
@@ -55,6 +56,12 @@ export function App() {
         </nav>
       </header>
       <main id="contenido" tabIndex={-1}>
+        {DEMO && (
+          <p role="note" className="demo-banner">
+            Demostración con datos de ejemplo. Es de solo lectura: no se puede analizar ni guardar
+            nada.
+          </p>
+        )}
         <div key={route.name === "analysis" ? route.id : route.name} className="view-enter">
           <Suspense fallback={<p role="status">Cargando…</p>}>
             {route.name === "home" && <HomeView />}

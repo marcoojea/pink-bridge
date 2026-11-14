@@ -1,3 +1,4 @@
+import { apiHref, DEMO, demoRequest } from "../demo.js";
 import {
   analysisSchema,
   apiErrorSchema,
@@ -33,11 +34,20 @@ interface RawResponse {
 }
 
 async function send(path: string, init?: RequestInit): Promise<RawResponse> {
+  let target = path;
+  if (DEMO) {
+    // En la demostración solo se lee: cualquier escritura se rechaza antes de tocar la red.
+    const mapped = demoRequest(path, init?.method ?? "GET");
+    if (mapped === null) {
+      throw new ApiRequestError(405, "read_only", "Esta demostración es de solo lectura.");
+    }
+    target = mapped;
+  }
   let response: Response;
   try {
     const headers = new Headers(init?.headers);
     headers.set("accept", "application/json");
-    response = await fetch(path, { ...init, headers });
+    response = await fetch(target, { ...init, headers });
   } catch {
     throw new ApiRequestError(0, "network_error", "No se pudo conectar con el servidor.");
   }
@@ -87,7 +97,7 @@ export async function createAnalysis(request: CreateAnalysisRequest): Promise<Cr
 export async function getAgentPromptText(id: string): Promise<string> {
   let response: Response;
   try {
-    response = await fetch(`/api/analyses/${encodeURIComponent(id)}/agent-prompts`, {
+    response = await fetch(apiHref(`/api/analyses/${encodeURIComponent(id)}/agent-prompts`), {
       headers: { accept: "text/markdown" },
     });
   } catch {

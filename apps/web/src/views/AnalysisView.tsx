@@ -15,6 +15,7 @@ import {
 } from "../labels.js";
 import { messageOf } from "./HomeView.js";
 
+import { apiHref } from "../demo.js";
 const POLL_MS = 1000;
 const POLL_MAX_MS = 5000;
 
@@ -186,7 +187,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
           <li>
             <a
               className="button-link secondary-link"
-              href={`/api/analyses/${analysis.id}/report?format=html`}
+              href={apiHref(`/api/analyses/${analysis.id}/report?format=html`)}
               download
             >
               Informe para compartir (HTML)
@@ -196,7 +197,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
           <li>
             <a
               className="button-link secondary-link"
-              href={`/api/analyses/${analysis.id}/report?format=json`}
+              href={apiHref(`/api/analyses/${analysis.id}/report?format=json`)}
               download
             >
               Datos completos (JSON)
@@ -206,7 +207,7 @@ export function AnalysisView({ id }: { readonly id: string }) {
           <li>
             <a
               className="button-link secondary-link"
-              href={`/api/analyses/${analysis.id}/agent-prompts`}
+              href={apiHref(`/api/analyses/${analysis.id}/agent-prompts`)}
               download
             >
               Instrucciones para un asistente de programación (Markdown)

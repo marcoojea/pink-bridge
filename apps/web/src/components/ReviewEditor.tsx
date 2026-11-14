@@ -4,6 +4,7 @@ import { saveReview } from "../api/client.js";
 import { messageOf } from "../views/HomeView.js";
 import { formatDate } from "../labels.js";
 
+import { DEMO } from "../demo.js";
 /** Estados que el usuario elige, con texto pensado para quien no conoce la herramienta. */
 const STATUS_OPTIONS: readonly (readonly [ReviewStatus, string])[] = [
   ["pending", "Todavía no lo he mirado"],
@@ -104,7 +105,7 @@ export function ReviewEditor({
         </p>
       )}
       <div className="actions">
-        <button type="submit" disabled={saving}>
+        <button type="submit" disabled={saving || DEMO}>
           {saving ? "Guardando…" : "Guardar mi seguimiento"}
         </button>
         {review && (

@@ -6,6 +6,7 @@ import { analysisHref, navigateTo, routeHref } from "../router.js";
 import { formatDate, formatDuration, pluralize, STATUS_LABELS } from "../labels.js";
 import { messageOf } from "./HomeView.js";
 
+import { DEMO } from "../demo.js";
 const PAGE_SIZE = 20;
 
 export function HistoryView() {
@@ -126,7 +127,7 @@ export function HistoryView() {
               <button
                 type="button"
                 className="secondary"
-                disabled={busyId !== null}
+                disabled={busyId !== null || DEMO}
                 aria-label={`Repetir revisión de ${analysis.url}`}
                 onClick={() => {
                   void repeat(analysis);
