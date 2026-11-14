@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "url": "https://demo.pinkbridge.test/",
+  "mode": "site",
+  "createdAt": "2026-11-14T19:20:32.251Z",
+  "axeVersion": "4.14.0",
+  "findings": [
+    {
+      "ruleId": "image-alt",
+      "kind": "automatic",
+      "impact": "critical",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      }
+    },
+    {
+      "ruleId": "image-alt",
+      "kind": "automatic",
+      "impact": "critical",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      }
+    },
+    {
+      "ruleId": "image-alt",
+      "kind": "automatic",
+      "impact": "critical",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "d14202f5ea3684637ac64c14777b2af4f9d63840cb2fa7aec67a79d80cff5ce3",
+        "loose": "8c1809a76f3feb0bd2702578fc4aa2c4ae9870b4f6c017268031b79e2a1c6d03"
+      }
+    },
+    {
+      "ruleId": "qa-broken-link",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "911eb15c7a4f8a0f507b9afdf7f3703b487eec85980da036604a4d83d1ff62d0",
+        "loose": "a59480f4574333c0a878c7ee0f99d88a8e9e91f749a292118f0667e4121bea0b"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "mobile",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "1704a16a7ecea5f8b247cda6860e4ea1e5154ac3ee30c8542fc4eaf51a03e92b",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "tablet",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "27ea1b4e949b8c8f204d2976de1e7fb1e88862e1d03fb65fda173cc56629dc12",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "6d586484417c665d8e5c4ebc71d4af638d025426f35d4a036d68ec22f50fd5bf",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "ad9668d04fa5cb7197e99c931dc65abd3a1bcde85ab38abf62adb2a2736e1271",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "d344b747e0f938a6cbbde16ad5269871e1f07748987e5f6df06a3e0563b53f79",
+        "loose": "b8a9f48143c2908db9da7bfdd7b178e3d93e2c07bc0ae93feaa1ed40b80a6e23"
+      }
+    },
+    {
+      "ruleId": "qa-console-error",
+      "kind": "needs_review",
+      "impact": "moderate",
+      "pageUrl": "https://demo.pinkbridge.test/",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "d85376589272549550ce5fb3e0c546876a868d5ff0ab17628bdac1bd815f1505",
+        "loose": "e3e8509dbaecd849a12a3f9be2972662528879d8110fee137b8acf3b141b12e4"
+      }
+    },
+    {
+      "ruleId": "qa-form-no-feedback",
+      "kind": "needs_review",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/contacto.html",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "888f15b72a0d19320163b1d67afd81147bdab403bf348b9e75cebc955a111877",
+        "loose": "be1323846edfb9c52cc4dfba0852ff81745f2a3251d723daf38b238cf71e523b"
+      }
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "desktop",
+      "affectedNodeCount": 0,
+      "fingerprint": {
+        "strong": "5cf627d458dc52ba92bc8169741ef709b92e26df5ce22efff6646efcefa03163",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      }
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "tablet",
+      "affectedNodeCount": 0,
+      "fingerprint": {
+        "strong": "7cac5f61b247a7ca5947d576b4034909e7ad9c499436ca50c748b7335ef9dc44",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      }
+    },
+    {
+      "ruleId": "qa-page-unreachable",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/no-existe.html",
+      "viewport": "mobile",
+      "affectedNodeCount": 0,
+      "fingerprint": {
+        "strong": "aaed8d35a9a056f7d64345cac1be1b2c1f46965055f4efb494296414ed15ef49",
+        "loose": "b0e363718c2aef30646f98ac5cfa046bffc6d2efb6a747200192302619cec9ee"
+      }
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "desktop",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "49c6c7be33b553e9e13a745c05f6a929d567bef01871ecfa722358e281735eb4",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      }
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "tablet",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "4f444c08618ff61c3e106a6b88f2b11995ed97d3aa7d8ccdb7445828145ad2b1",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      }
+    },
+    {
+      "ruleId": "qa-resource-error",
+      "kind": "automatic",
+      "impact": "serious",
+      "pageUrl": "https://demo.pinkbridge.test/servicios.html",
+      "viewport": "mobile",
+      "affectedNodeCount": 1,
+      "fingerprint": {
+        "strong": "de250e4171a44602cc48c7c91651e43f172351bb36d294a0d761cf3fdc4601d2",
+        "loose": "3b045e76a122d8593aed760850d3a6e0392ba20373152e6b71e76cdf582dbae7"
+      }
+    }
+  ]
+}
