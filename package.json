@@ -2,6 +2,7 @@
   "name": "pink-bridge",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Plataforma de auditoría de accesibilidad web y generación de informes QA",
   "type": "module",
   "engines": {
